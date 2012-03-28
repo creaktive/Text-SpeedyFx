@@ -6,7 +6,19 @@ use Test::More;
 
 use_ok(q(Text::SpeedyFx));
 
-my $sfx = Text::SpeedyFx->new(42);
+my $sfx = Text::SpeedyFx->new;
+isa_ok($sfx, qw(Text::SpeedyFx));
+can_ok($sfx, qw(hash));
+
+my $r = $sfx->hash(q(Hello, World!));
+isa_ok($r, q(HASH));
+
+ok(
+    @$r{828691033,828691033} == (1,1),
+    q(hello world)
+);
+
+$sfx = Text::SpeedyFx->new(42);
 isa_ok($sfx, qw(Text::SpeedyFx));
 can_ok($sfx, qw(hash));
 
@@ -14,7 +26,7 @@ my $str = q(
     À noite, vovô Kowalsky vê o ímã cair no pé do pingüim
     queixoso e vovó põe açúcar no chá de tâmaras do jabuti feliz.
 );
-my $r = $sfx->hash($str);
+$r = $sfx->hash($str);
 isa_ok($r, q(HASH));
 
 my $expect = {
@@ -66,4 +78,4 @@ ok(
     q(feature vector match)
 );
 
-done_testing(8 + $n);
+done_testing(12 + $n);

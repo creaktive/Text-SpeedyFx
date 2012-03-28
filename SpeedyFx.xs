@@ -136,10 +136,13 @@ MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 PROTOTYPES: ENABLE
 
 Text::SpeedyFx
-new (package, seed)
+new (package, ...)
     char *package
-	U32 seed
+PREINIT:
+	U32 seed = 1;
 CODE:
+    if (items > 1)
+        seed = SvNV(ST(1));
     RETVAL = new(seed);
 OUTPUT:
     RETVAL
