@@ -1,0 +1,8 @@
+.build/*
+Text-SpeedyFx-*/*
+blib/*
+*.bak
+*.gz
+Makefile
+pm_to_blib
+nytprof*

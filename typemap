@@ -1,0 +1,3 @@
+TYPEMAP
+SpeedyFx * T_PTROBJ
+Text::SpeedyFx T_PTROBJ
