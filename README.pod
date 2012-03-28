@@ -1,12 +1,42 @@
+=pod
+
 =encoding utf8
 
 =head1 NAME
 
-Text::SpeedyFx - SpeedyFx
+Text::SpeedyFx - Extremely Fast Text Feature Extraction for Classification and Indexing
 
 =head1 VERSION
 
 version 0.001
+
+=head1 SYNOPSIS
+
+    ...
+
+=head1 DESCRIPTION
+
+...
+
+=head1 METHODS
+
+=head2 new
+
+...
+
+=head2 hash
+
+...
+
+=head1 REFERENCES
+
+=over 4
+
+=item *
+
+L<Extremely Fast Text Feature Extraction for Classification and Indexing|http://www.hpl.hp.com/techreports/2008/HPL-2008-91R1.pdf> by L<George Forman|http://www.hpl.hp.com/personal/George_Forman/> and L<Evan Kirshenbaum|http://www.kirshenbaum.net/evan/index.htm>
+
+=back
 
 =head1 AUTHOR
 
