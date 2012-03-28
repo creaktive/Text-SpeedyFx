@@ -4,12 +4,10 @@
 
 #include "ppport.h"
 
-#define MAP_SIZE 65536
+#define MAP_SIZE (1048576 / sizeof(U32))
 
 typedef struct {
-    U32 seed;
     U32 code_table[MAP_SIZE];
-    U32 rand_table[MAP_SIZE];
 } SpeedyFx;
 
 typedef SpeedyFx *Text__SpeedyFx;
@@ -21,18 +19,18 @@ SpeedyFx *new (U32 seed) {
     U8 u[8];
     UV c;
     STRLEN len;
+    U32 *rand_table = (U32 *) calloc(sizeof(U32), MAP_SIZE);
     SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(1, sizeof(SpeedyFx));
 
-    pSpeedyFx->rand_table[0]
-        = pSpeedyFx->seed
+    rand_table[0]
         = seed
             ? seed
             : 1;
 
     for (i = 1; i < MAP_SIZE; i++)
-        pSpeedyFx->rand_table[i]
+        rand_table[i]
             = (
-                pSpeedyFx->rand_table[i - 1]
+                rand_table[i - 1]
                 * 0x10a860c1
             ) % 0xfffffffb;
 
@@ -45,10 +43,11 @@ SpeedyFx *new (U32 seed) {
             *(u + len) = '\0';
 
             c = utf8_to_uvchr(u, &len);
-            pSpeedyFx->code_table[i] = pSpeedyFx->rand_table[c];
+            pSpeedyFx->code_table[i] = rand_table[c];
         }
     }
 
+    free(rand_table);
     return pSpeedyFx;
 }
 
