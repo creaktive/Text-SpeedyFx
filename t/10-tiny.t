@@ -10,10 +10,11 @@ my $sfx = Text::SpeedyFx->new(42);
 isa_ok($sfx, qw(Text::SpeedyFx));
 can_ok($sfx, qw(hash));
 
-my $r = $sfx->hash(q(
+my $str = q(
     À noite, vovô Kowalsky vê o ímã cair no pé do pingüim
     queixoso e vovó põe açúcar no chá de tâmaras do jabuti feliz.
-));
+);
+my $r = $sfx->hash($str);
 isa_ok($r, q(HASH));
 
 my $expect = {
@@ -52,4 +53,17 @@ ok(
     qq(key $_ match)
 ) for keys %$expect;
 
-done_testing(5 + $n);
+$r = $sfx->hash_fv($str, 16);
+isa_ok($r, q(ARRAY));
+
+ok(
+    scalar @$r == 16,
+    q(same feature vector length)
+);
+
+ok(
+    join('', @$r) eq q(0110001001111011),
+    q(feature vector match)
+);
+
+done_testing(8 + $n);

@@ -42,4 +42,8 @@ __END__
 
 ...
 
+=method hash_fv
+
+...
+
 =cut

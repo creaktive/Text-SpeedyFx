@@ -79,15 +79,13 @@ void _store(HV *r, U32 *wordhash) {
 HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     U32 code;
     U32 wordhash = 0;
-    U32 i = 0;
     UV c;
     STRLEN len;
-    HV *r = (HV *)sv_2mortal((SV *)newHV());
+    HV *r = (HV *) sv_2mortal((SV *) newHV());
 
     while (*s) {
         c = utf8_to_uvchr(s, &len);
         s += len;
-        ++i;
 
         if (code = pSpeedyFx->code_table[c % MAP_SIZE])
             wordhash
@@ -98,6 +96,38 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     }
     _store(r, &wordhash);
 
+    return r;
+}
+
+AV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
+    U32 code;
+    U32 wordhash = 0;
+    U32 i = 0;
+    UV c;
+    STRLEN len;
+    AV *r = (AV *) sv_2mortal((SV *) newAV());
+    U8 *fv = (U8 *) calloc(1, n);
+
+    while (*s) {
+        c = utf8_to_uvchr(s, &len);
+        s += len;
+
+        if (code = pSpeedyFx->code_table[c % MAP_SIZE])
+            wordhash
+                = (wordhash >> 1)
+                + code;
+        else if (wordhash) {
+            fv[wordhash % n] = 1;
+            wordhash = 0;
+        }
+    }
+    if (wordhash)
+        fv[wordhash % n] = 1;
+
+    for (i = 0; i < n; i++)
+        av_push(r, newSVnv(fv[i]));
+
+    free(fv);
     return r;
 }
 
@@ -118,3 +148,9 @@ HV *
 hash (pSpeedyFx, str)
     Text::SpeedyFx pSpeedyFx
     const char *str
+
+AV *
+hash_fv (pSpeedyFx, str, n)
+    Text::SpeedyFx pSpeedyFx
+    const char *str
+    U16 n
