@@ -15,7 +15,7 @@ srand 0x4c53_4820;
 my $n = int sprintf q(%0.0f), 1 / (0.1 ** 2);
 
 my $hashes = [];
-push $hashes, Text::SpeedyFx->new(int rand 2 ** 32)
+push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32)
     for 1 .. $n;
 
 my @text = map {

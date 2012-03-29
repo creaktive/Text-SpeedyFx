@@ -4,7 +4,7 @@
 
 #include "ppport.h"
 
-#define MAP_SIZE (0x2ffff * sizeof(U32))
+#define MAP_SIZE 0x2ffff
 
 typedef struct {
     U32 code_table[MAP_SIZE];
@@ -26,17 +26,26 @@ SpeedyFx *new (U32 seed) {
 
     if (fold_init == 0) {
         for (i = 0; i < MAP_SIZE; i++) {
-            t = uvchr_to_utf8(s, (UV)i);
-            *t = '\0';
-
-            if (isALNUM_utf8(s)) {
-                (void)toLOWER_utf8(s, u, &len);
-                *(u + len) = '\0';
-
-                c = utf8_to_uvchr(u, &len);
-            } else
+            if (i >= 0xd800 && i <= 0xdfff)         // high/low-surrogate code points
                 c = 0;
+            else if (i >= 0xfdd0 && i <= 0xfdef)    // noncharacters
+                c = 0;
+            else if ((i & 0xffff) == 0xfffe)        // noncharacters
+                c = 0;
+            else if ((i & 0xffff) == 0xffff)        // noncharacters
+                c = 0;
+            else {
+                t = uvchr_to_utf8(s, (UV) i);
+                *t = '\0';
 
+                if (isALNUM_utf8(s)) {
+                    (void) toLOWER_utf8(s, u, &len);
+                    *(u + len) = '\0';
+
+                    c = utf8_to_uvchr(u, &len);
+                } else
+                    c = 0;
+            }
             fold_table[i] = c;
         }
         fold_init = 1;
