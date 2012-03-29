@@ -7,24 +7,91 @@ use warnings;
 
 # VERSION
 
+=head1 SYNOPSIS
+
+    minhash_cmp [options] FILE1 FILE2
+
+=head1 DESCRIPTION
+
+MinHash (or the min-wise independent permutations locality sensitive hashing scheme) is a technique for quickly estimating how similar two sets are.
+
+=head1 OPTIONS
+
+=over 4
+
+=item --help
+
+This.
+
+=item --binmode
+
+You can use this to set the file to be read in binary mode (C<:raw>), C<:utf8>, etc.
+Default: C<:utf8>
+
+=item --epsilon
+
+Expected error value used to compute the number of different hash functions (default: 0.05).
+
+=item --k
+
+Number of different hash functions to use (default: 400; overrides C<--epsilon>).
+
+=item --seed
+
+Custom seed (integer).
+
+=back
+
+=head1 CAVEATS
+
+Uses B<MANY RAM>!!!
+Each initialized hash function wastes ~2MB.
+
+=head1 SEE ALSO
+
+=for :list
+* L<MinHash|http://en.wikipedia.org/wiki/MinHash>
+* L<Text::SpeedyFx>
+
+=cut
+
 use File::Slurp;
+use Getopt::Long;
 use List::MoreUtils qw(distinct);
+use Pod::Usage;
 use Text::SpeedyFx;
 
-srand 0x4c53_4820;
-my $n = int sprintf q(%0.0f), 1 / (0.1 ** 2);
+my $file_b = pop @ARGV;
+my $file_a = pop @ARGV;
+
+GetOptions(
+    q(help)             => \my $help,
+    q(binmode=s)        => \my $binmode,
+    q(epsilon=f)        => \my $e,
+    q(k=i)              => \my $k,
+    q(seed=i)           => \my $seed,
+) or pod2usage(q(-verbose) => 1);
+pod2usage(q(-verbose) => 1)
+    if $help
+        or not defined $file_a
+        or not defined $file_b;
+
+$e //= 0.05;
+$k //= 0 + sprintf
+    q(%0.0f),
+    1 / ($e ** 2);
 
 my $hashes = [];
+srand($seed // 0x4c53_4820);
 push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32)
-    for 1 .. $n;
+    for 1 .. $k;
 
 my @text = map {
-    scalar
-        read_file(
-            $_,
-            { binmode => q(:utf8) }
-        )
-} @ARGV;
+    '' . read_file(
+        $_,
+        { binmode => $binmode // q(:utf8) }
+    )
+} ($file_a, $file_b);
 
 my $match = 0;
 for my $hash (@{$hashes}) {
@@ -35,4 +102,4 @@ for my $hash (@{$hashes}) {
             } @text;
 }
 
-printf qq(%0.2f\n), $match / $n;
+printf qq(k=%d; similarity=%0.5f\n), $k, $match / $k;
