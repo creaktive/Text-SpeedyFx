@@ -61,9 +61,9 @@ Parses C<$string> and returns a hash reference where keys are hashed tokens and 
 
 Parses C<$string> and returns a feature vector with C<$n> elements.
 
-=method min
+=method hash_min($string)
 
-Returns the hash with the lowest value from the last C<hash> run.
+Parses C<$string> and returns the hash with the lowest value.
 
 =head1 REFERENCES
 

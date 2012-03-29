@@ -31,8 +31,7 @@ for my $hash (@{$hashes}) {
     ++$match
         if 1 == distinct
             map {
-                $hash->hash($_);
-                $hash->min;
+                $hash->hash_min($_);
             } @text;
 }
 

@@ -7,7 +7,6 @@
 #define MAP_SIZE (0x2ffff * sizeof(U32))
 
 typedef struct {
-    U32 min;
     U32 code_table[MAP_SIZE];
 } SpeedyFx;
 
@@ -56,16 +55,13 @@ void DESTROY (SpeedyFx *pSpeedyFx) {
     free(pSpeedyFx);
 }
 
-void _store(SpeedyFx *pSpeedyFx, HV *r, U32 *wordhash) {
+void _store(HV *r, U32 *wordhash) {
     double count = 1;
     U8 buf[16];
     U8 len;
     SV **ps;
 
     if (*wordhash) {
-        if (pSpeedyFx->min > *wordhash)
-            pSpeedyFx->min = *wordhash;
-
         sprintf(buf, "%ld", (long int) *wordhash);
         len = strlen(buf);
 
@@ -86,7 +82,6 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     STRLEN len;
     HV *r = (HV *) sv_2mortal((SV *) newHV());
 
-    pSpeedyFx->min = 0xffffffff;
 
     while (*s) {
         c = utf8_to_uvchr(s, &len);
@@ -97,9 +92,9 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
                 = (wordhash >> 1)
                 + code;
         else if (wordhash)
-            _store(pSpeedyFx, r, &wordhash);
+            _store(r, &wordhash);
     }
-    _store(pSpeedyFx, r, &wordhash);
+    _store(r, &wordhash);
 
     return r;
 }
@@ -136,8 +131,32 @@ AV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
     return r;
 }
 
-SV *min (SpeedyFx *pSpeedyFx) {
-    return newSVnv(pSpeedyFx->min);
+SV *hash_min (SpeedyFx *pSpeedyFx, const char *s) {
+    U32 code;
+    U32 wordhash = 0;
+    U32 min = 0xffffffff;
+    UV c;
+    STRLEN len;
+
+    while (*s) {
+        c = utf8_to_uvchr(s, &len);
+        s += len;
+
+        if (code = pSpeedyFx->code_table[c % MAP_SIZE])
+            wordhash
+                = (wordhash >> 1)
+                + code;
+        else if (wordhash) {
+            if (min > wordhash)
+                min = wordhash;
+
+            wordhash = 0;
+        }
+    }
+    if (wordhash && min > wordhash)
+        min = wordhash;
+
+    return newSVnv(min);
 }
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
@@ -168,5 +187,6 @@ hash_fv (pSpeedyFx, str, n)
     U16 n
 
 SV *
-min (pSpeedyFx)
+hash_min (pSpeedyFx, str)
     Text::SpeedyFx pSpeedyFx
+    const char *str
