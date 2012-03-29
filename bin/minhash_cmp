@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+# ABSTRACT: uses MinHash & SpeedyFx to compare large text data
+# PODNAME: minhash_cmp
+use strict;
+use utf8;
+use warnings;
+
+# VERSION
+
+use File::Slurp;
+use List::Util qw(min);
+use List::MoreUtils qw(distinct);
+use Text::SpeedyFx;
+
+srand 0x4c53_4820;
+my $n = int sprintf q(%0.0f), 1 / (0.1 ** 2);
+
+my $hashes = [];
+push $hashes, Text::SpeedyFx->new(int rand 2 ** 32)
+    for 1 .. $n;
+
+my @text = map {
+    scalar
+        read_file(
+            $_,
+            { binmode => q(:utf8) }
+        )
+} @ARGV;
+
+my $match = 0;
+for my $hash (@{$hashes}) {
+    ++$match
+        if 1 == distinct
+            map {
+                min keys %{$hash->hash($_)};
+            } @text;
+}
+
+printf qq(%0.2f\n), $match / $n;

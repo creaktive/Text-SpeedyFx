@@ -4,7 +4,7 @@
 
 #include "ppport.h"
 
-#define MAP_SIZE (1048576 / sizeof(U32))
+#define MAP_SIZE (0x2ffff * sizeof(U32))
 
 typedef struct {
     U32 code_table[MAP_SIZE];
