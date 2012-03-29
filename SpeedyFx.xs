@@ -19,8 +19,28 @@ SpeedyFx *new (U32 seed) {
     U8 u[8];
     UV c;
     STRLEN len;
-    U32 *rand_table = (U32 *) calloc(sizeof(U32), MAP_SIZE);
+    static U8 fold_init = 0;
+    static U32 fold_table[MAP_SIZE];
+    U32 rand_table[MAP_SIZE];
     SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(1, sizeof(SpeedyFx));
+
+    if (fold_init == 0) {
+        for (i = 0; i < MAP_SIZE; i++) {
+            t = uvchr_to_utf8(s, (UV)i);
+            *t = '\0';
+
+            if (isALNUM_utf8(s)) {
+                (void)toLOWER_utf8(s, u, &len);
+                *(u + len) = '\0';
+
+                c = utf8_to_uvchr(u, &len);
+            } else
+                c = 0;
+
+            fold_table[i] = c;
+        }
+        fold_init = 1;
+    }
 
     rand_table[0]
         = seed
@@ -34,20 +54,10 @@ SpeedyFx *new (U32 seed) {
                 * 0x10a860c1
             ) % 0xfffffffb;
 
-    for (i = 0; i < MAP_SIZE; i++) {
-        t = uvchr_to_utf8(s, (UV)i);
-        *t = '\0';
+    for (i = 0; i < MAP_SIZE; i++)
+        if (fold_table[i])
+            pSpeedyFx->code_table[i] = rand_table[fold_table[i]];
 
-        if (isALNUM_utf8(s)) {
-            (void)toLOWER_utf8(s, u, &len);
-            *(u + len) = '\0';
-
-            c = utf8_to_uvchr(u, &len);
-            pSpeedyFx->code_table[i] = rand_table[c];
-        }
-    }
-
-    free(rand_table);
     return pSpeedyFx;
 }
 
