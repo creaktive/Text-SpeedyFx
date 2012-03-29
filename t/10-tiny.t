@@ -14,8 +14,13 @@ my $r = $sfx->hash(q(Hello, World!));
 isa_ok($r, q(HASH));
 
 ok(
-    @$r{828691033,828691033} == (1,1),
+    @$r{828691033,2983498205} == (1,1),
     q(hello world)
+);
+
+ok(
+    $sfx->min == 828691033,
+    q(min value 1)
 );
 
 $sfx = Text::SpeedyFx->new(42);
@@ -61,6 +66,11 @@ ok(
 );
 
 ok(
+    $sfx->min == 106041279,
+    q(min value 2)
+);
+
+ok(
     $r->{$_} == $expect->{$_},
     qq(key $_ match)
 ) for keys %$expect;
@@ -78,4 +88,4 @@ ok(
     q(feature vector match)
 );
 
-done_testing(12 + $n);
+done_testing(14 + $n);

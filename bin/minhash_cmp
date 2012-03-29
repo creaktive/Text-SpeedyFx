@@ -8,7 +8,6 @@ use warnings;
 # VERSION
 
 use File::Slurp;
-use List::Util qw(min);
 use List::MoreUtils qw(distinct);
 use Text::SpeedyFx;
 
@@ -32,7 +31,8 @@ for my $hash (@{$hashes}) {
     ++$match
         if 1 == distinct
             map {
-                min keys %{$hash->hash($_)};
+                $hash->hash($_);
+                $hash->min;
             } @text;
 }
 

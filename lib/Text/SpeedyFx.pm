@@ -61,6 +61,10 @@ Parses C<$string> and returns a hash reference where keys are hashed tokens and 
 
 Parses C<$string> and returns a feature vector with C<$n> elements.
 
+=method min
+
+Returns the hash with the lowest value from the last C<hash> run.
+
 =head1 REFERENCES
 
 =for :list
