@@ -61,9 +61,6 @@ use List::MoreUtils qw(distinct);
 use Pod::Usage;
 use Text::SpeedyFx;
 
-my $file_b = pop @ARGV;
-my $file_a = pop @ARGV;
-
 GetOptions(
     q(help)             => \my $help,
     q(binmode=s)        => \my $binmode,
@@ -72,9 +69,7 @@ GetOptions(
     q(seed=i)           => \my $seed,
 ) or pod2usage(q(-verbose) => 1);
 pod2usage(q(-verbose) => 1)
-    if $help
-        or not defined $file_a
-        or not defined $file_b;
+    if $help or $#ARGV != 1;
 
 $e //= 0.05;
 $k //= 0 + sprintf
@@ -91,7 +86,7 @@ my @text = map {
         $_,
         { binmode => $binmode // q(:utf8) }
     )
-} ($file_a, $file_b);
+} @ARGV;
 
 my $match = 0;
 for my $hash (@{$hashes}) {
