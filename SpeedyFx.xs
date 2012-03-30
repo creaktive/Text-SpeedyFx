@@ -81,7 +81,7 @@ void _store(HV *r, U32 *wordhash) {
     SV **ps;
 
     if (*wordhash) {
-        sprintf(buf, "%ld", (long int) *wordhash);
+        sprintf(buf, "%u", (unsigned int) *wordhash);
         len = strlen(buf);
 
         ps = hv_fetch(r, buf, len, 0);
