@@ -58,15 +58,14 @@ $Data::Dumper::Sortkeys = sub { [ sort { $a <=> $b } keys %{$_[0]} ] };
 $err and diag(Dumper $r);
 
 $r = $sfx->hash_fv($str, 16);
-isa_ok($r, q(ARRAY));
 
 ok(
-    scalar @$r == 16,
-    qq(same feature vector length (@{[ scalar @$r ]}))
+    length $r == 2,
+    qq(same feature vector length (@{[ length $r ]}))
 );
 
 ok(
-    join('', @$r) eq q(0110001001111011),
+    unpack(q(b*), $r) eq q(0110001001111011),
     q(feature vector match)
 );
 
@@ -81,4 +80,4 @@ ok(
     qq(hash_min match ($r))
 );
 
-done_testing(7 + $n);
+done_testing(6 + $n);

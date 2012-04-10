@@ -118,14 +118,16 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     return r;
 }
 
-AV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
+#define SetBit(a, b) (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
+
+SV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
     U32 code;
     U32 wordhash = 0;
     U32 i = 0;
     UV c;
     STRLEN len;
-    AV *r = (AV *) sv_2mortal((SV *) newAV());
-    U8 *fv = (U8 *) calloc(1, n);
+    U16 size = ceil((float) n / 8.0);
+    U8 *fv = (U8 *) calloc(1, size);
 
     while (*s) {
         c = utf8_to_uvchr(s, &len);
@@ -136,18 +138,14 @@ AV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
                 = (wordhash >> 1)
                 + code;
         else if (wordhash) {
-            fv[wordhash % n] = 1;
+            SetBit(fv, wordhash % n);
             wordhash = 0;
         }
     }
     if (wordhash)
-        fv[wordhash % n] = 1;
+        SetBit(fv, wordhash % n);
 
-    for (i = 0; i < n; i++)
-        av_push(r, newSVnv(fv[i]));
-
-    free(fv);
-    return r;
+    return newSVpv(fv, size);
 }
 
 SV *hash_min (SpeedyFx *pSpeedyFx, const char *s) {
@@ -199,7 +197,7 @@ hash (pSpeedyFx, str)
     Text::SpeedyFx pSpeedyFx
     const char *str
 
-AV *
+SV *
 hash_fv (pSpeedyFx, str, n)
     Text::SpeedyFx pSpeedyFx
     const char *str
