@@ -55,7 +55,7 @@ Each initialized hash function wastes ~2MB.
 
 =cut
 
-use File::Slurp;
+use File::Map qw(map_file);
 use Getopt::Long;
 use List::MoreUtils qw(distinct);
 use Pod::Usage;
@@ -82,10 +82,11 @@ push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32)
     for 1 .. $k;
 
 my @text = map {
-    '' . read_file(
+    map_file
+        my $data,
         $_,
-        { binmode => $binmode // q(:utf8) }
-    )
+        q(<) . ($binmode // q(:utf8));
+    $data;
 } @ARGV;
 
 my $match = 0;
