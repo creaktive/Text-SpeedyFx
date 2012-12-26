@@ -4,10 +4,11 @@
 
 #include "ppport.h"
 
-#define MAP_SIZE 0x2ffff
+#define MAX_MAP_SIZE 0x2ffff
 
 typedef struct {
-    U32 code_table[MAP_SIZE];
+    U32 length;
+    U32 code_table[];
 } SpeedyFx;
 
 typedef SpeedyFx *Text__SpeedyFx;
@@ -20,12 +21,14 @@ SpeedyFx *new (U32 seed) {
     UV c;
     STRLEN len;
     static U8 fold_init = 0;
-    static U32 fold_table[MAP_SIZE];
-    U32 rand_table[MAP_SIZE];
-    SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(1, sizeof(SpeedyFx));
+    static U32 fold_table[MAX_MAP_SIZE];
+    U32 rand_table[MAX_MAP_SIZE];
+
+    SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(sizeof(U32), MAX_MAP_SIZE + 1);
+    pSpeedyFx->length = MAX_MAP_SIZE;
 
     if (fold_init == 0) {
-        for (i = 0; i < MAP_SIZE; i++) {
+        for (i = 0; i < MAX_MAP_SIZE; i++) {
             if (i >= 0xd800 && i <= 0xdfff)         // high/low-surrogate code points
                 c = 0;
             else if (i >= 0xfdd0 && i <= 0xfdef)    // noncharacters
@@ -56,14 +59,14 @@ SpeedyFx *new (U32 seed) {
             ? seed
             : 1;
 
-    for (i = 1; i < MAP_SIZE; i++)
+    for (i = 1; i < pSpeedyFx->length; i++)
         rand_table[i]
             = (
                 rand_table[i - 1]
                 * 0x10a860c1
             ) % 0xfffffffb;
 
-    for (i = 0; i < MAP_SIZE; i++)
+    for (i = 0; i < pSpeedyFx->length; i++)
         if (fold_table[i])
             pSpeedyFx->code_table[i] = rand_table[fold_table[i]];
 
@@ -101,12 +104,11 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     STRLEN len;
     HV *r = (HV *) sv_2mortal((SV *) newHV());
 
-
     while (*s) {
         c = utf8_to_uvchr(s, &len);
         s += len;
 
-        if (code = pSpeedyFx->code_table[c % MAP_SIZE])
+        if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
             wordhash
                 = (wordhash >> 1)
                 + code;
@@ -133,7 +135,7 @@ SV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
         c = utf8_to_uvchr(s, &len);
         s += len;
 
-        if (code = pSpeedyFx->code_table[c % MAP_SIZE])
+        if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
             wordhash
                 = (wordhash >> 1)
                 + code;
@@ -159,7 +161,7 @@ SV *hash_min (SpeedyFx *pSpeedyFx, const char *s) {
         c = utf8_to_uvchr(s, &len);
         s += len;
 
-        if (code = pSpeedyFx->code_table[c % MAP_SIZE])
+        if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
             wordhash
                 = (wordhash >> 1)
                 + code;
