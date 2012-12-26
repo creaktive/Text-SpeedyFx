@@ -1,5 +1,5 @@
 
-#!start included /home/stas/perl5/perlbrew/perls/perl-5.14.2/lib/site_perl/5.14.2/ExtUtils/MANIFEST.SKIP
+#!start included /home/stas/perl5/perlbrew/perls/perl-5.16.0/lib/5.16.2/ExtUtils/MANIFEST.SKIP
 # Avoid version control files.
 \bRCS\b
 \bCVS\b
@@ -52,8 +52,10 @@
 # Avoid Devel::Cover and Devel::CoverX::Covered files.
 \bcover_db\b
 \bcovered\b
- 
+
 # Avoid MYMETA files
 ^MYMETA\.
-#!end included /home/stas/perl5/perlbrew/perls/perl-5.14.2/lib/site_perl/5.14.2/ExtUtils/MANIFEST.SKIP
+#!end included /home/stas/perl5/perlbrew/perls/perl-5.16.0/lib/5.16.2/ExtUtils/MANIFEST.SKIP
 
+^SpeedyFx\.bs$
+^SpeedyFx\.[co]$

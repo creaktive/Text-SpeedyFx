@@ -5,9 +5,7 @@ use strict;
 use utf8;
 use warnings;
 
-require Exporter;
-
-our @ISA = qw(Exporter);
+use base q(Exporter);
 
 # VERSION
 

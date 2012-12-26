@@ -82,11 +82,13 @@ push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32)
     for 1 .. $k;
 
 my @text = map {
-    map_file
-        my $data,
-        $_,
-        q(<) . ($binmode // q(:utf8));
-    $data;
+    sub {
+        map_file
+            my $data,
+            shift,
+            q(<) . ($binmode // q(:utf8));
+        return $data;
+    }->($_)
 } @ARGV;
 
 my $match = 0;
