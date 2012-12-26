@@ -13,8 +13,8 @@ typedef struct {
 
 typedef SpeedyFx *Text__SpeedyFx;
 
-SpeedyFx *new (U32 seed) {
-    U32 i;
+SpeedyFx *new (U32 seed, U8 bits) {
+    U32 i, length;
     U8 s[8];
     U8 *t;
     U8 u[8];
@@ -24,8 +24,18 @@ SpeedyFx *new (U32 seed) {
     static U32 fold_table[MAX_MAP_SIZE];
     U32 rand_table[MAX_MAP_SIZE];
 
-    SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(sizeof(U32), MAX_MAP_SIZE + 1);
-    pSpeedyFx->length = MAX_MAP_SIZE;
+    if (seed == 0)
+        croak("seed must be not 0!");
+
+    if (bits <= 8)
+        length = 256;
+    else if (bits > 17)
+        length = MAX_MAP_SIZE;
+    else
+        length = 1 << bits;
+
+    SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(sizeof(U32), 1 + length);
+    pSpeedyFx->length = length;
 
     if (fold_init == 0) {
         for (i = 0; i < MAX_MAP_SIZE; i++) {
@@ -54,11 +64,7 @@ SpeedyFx *new (U32 seed) {
         fold_init = 1;
     }
 
-    rand_table[0]
-        = seed
-            ? seed
-            : 1;
-
+    rand_table[0] = seed;
     for (i = 1; i < pSpeedyFx->length; i++)
         rand_table[i]
             = (
@@ -105,8 +111,11 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     HV *r = (HV *) sv_2mortal((SV *) newHV());
 
     while (*s) {
-        c = utf8_to_uvchr(s, &len);
-        s += len;
+        if (pSpeedyFx->length > 256) {
+            c = utf8_to_uvchr(s, &len);
+            s += len;
+        } else
+            c = *s++;
 
         if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
             wordhash
@@ -132,8 +141,11 @@ SV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
     U8 *fv = (U8 *) calloc(1, size);
 
     while (*s) {
-        c = utf8_to_uvchr(s, &len);
-        s += len;
+        if (pSpeedyFx->length > 256) {
+            c = utf8_to_uvchr(s, &len);
+            s += len;
+        } else
+            c = *s++;
 
         if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
             wordhash
@@ -158,8 +170,11 @@ SV *hash_min (SpeedyFx *pSpeedyFx, const char *s) {
     STRLEN len;
 
     while (*s) {
-        c = utf8_to_uvchr(s, &len);
-        s += len;
+        if (pSpeedyFx->length > 256) {
+            c = utf8_to_uvchr(s, &len);
+            s += len;
+        } else
+            c = *s++;
 
         if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
             wordhash
@@ -186,11 +201,15 @@ Text::SpeedyFx
 new (package, ...)
     char *package
 PREINIT:
-	U32 seed = 1;
+    U32 seed = 1;
+    U8 bits = 18;
 CODE:
     if (items > 1)
         seed = SvNV(ST(1));
-    RETVAL = new(seed);
+    if (items > 2)
+        bits = SvNV(ST(2));
+
+    RETVAL = new(seed, bits);
 OUTPUT:
     RETVAL
 

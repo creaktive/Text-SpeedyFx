@@ -1,32 +1,21 @@
 #!/usr/bin/env perl
 use autodie;
+use bytes;
 use strict;
-use utf8;
 use warnings;
 
 use Benchmark qw(cmpthese :hireswallclock);
+use File::Map qw(map_file);
 use Text::SpeedyFx;
 
-my $file = q(enwik8);
-my $sfx = Text::SpeedyFx->new;
+map_file
+    my $data,
+    q(enwik8);
+
+my $sfx = Text::SpeedyFx->new(1, 8);
 
 cmpthese(10 => {
-    hash        => sub {
-        open(my $fh, q(<:encoding(UTF-8)), $file);
-        $sfx->hash($_)
-            while <$fh>;
-        close $fh;
-    },
-    hash_fv     => sub {
-        open(my $fh, q(<:encoding(UTF-8)), $file);
-        $sfx->hash_fv($_, 100)
-            while <$fh>;
-        close $fh;
-    },
-    hash_min    => sub {
-        open(my $fh, q(<:encoding(UTF-8)), $file);
-        $sfx->hash_min($_)
-            while <$fh>;
-        close $fh;
-    },
+    hash        => sub { $sfx->hash($data) },
+    hash_fv     => sub { $sfx->hash_fv($data, 100) },
+    hash_min    => sub { $sfx->hash_min($data) },
 });
