@@ -14,13 +14,14 @@ typedef struct {
 typedef SpeedyFx *Text__SpeedyFx;
 
 SpeedyFx *new (U32 seed, U8 bits) {
-    U32 i, length;
+    U32 i;
     U8 s[8];
     U8 *t;
     U8 u[8];
     UV c;
     STRLEN len;
-    static U8 fold_init = 0;
+    U32 length, *code_table;
+    static U32 fold_init = 0;
     static U32 fold_table[MAX_MAP_SIZE];
     U32 rand_table[MAX_MAP_SIZE];
 
@@ -34,11 +35,14 @@ SpeedyFx *new (U32 seed, U8 bits) {
     else
         length = 1 << bits;
 
-    SpeedyFx *pSpeedyFx = (SpeedyFx *) calloc(sizeof(U32), 1 + length);
-    pSpeedyFx->length = length;
+    SpeedyFx *pSpeedyFx;
+    Newxz(pSpeedyFx, 1 + length, U32);
 
-    if (fold_init == 0) {
-        for (i = 0; i < MAX_MAP_SIZE; i++) {
+    pSpeedyFx->length = length;
+    code_table = pSpeedyFx->code_table;
+
+    if (fold_init < length) {
+        for (i = fold_init + 1; i < length; i++) {
             if (i >= 0xd800 && i <= 0xdfff)         // high/low-surrogate code points
                 c = 0;
             else if (i >= 0xfdd0 && i <= 0xfdef)    // noncharacters
@@ -56,31 +60,37 @@ SpeedyFx *new (U32 seed, U8 bits) {
                     *(u + len) = '\0';
 
                     c = utf8_to_uvchr(u, &len);
+
+                    // grow the tables, if necessary
+                    if (length < c)
+                        length = c;
                 } else
                     c = 0;
             }
             fold_table[i] = c;
         }
-        fold_init = 1;
+        fold_init = length;
     }
 
+    Renew(pSpeedyFx, 1 + length, U32);
+
     rand_table[0] = seed;
-    for (i = 1; i < pSpeedyFx->length; i++)
+    for (i = 1; i < length; i++)
         rand_table[i]
             = (
                 rand_table[i - 1]
                 * 0x10a860c1
             ) % 0xfffffffb;
 
-    for (i = 0; i < pSpeedyFx->length; i++)
+    for (i = 0; i < length; i++)
         if (fold_table[i])
-            pSpeedyFx->code_table[i] = rand_table[fold_table[i]];
+            code_table[i] = rand_table[fold_table[i]];
 
     return pSpeedyFx;
 }
 
 void DESTROY (SpeedyFx *pSpeedyFx) {
-    free(pSpeedyFx);
+    Safefree(pSpeedyFx);
 }
 
 void _store(HV *r, U32 *wordhash) {
@@ -110,14 +120,17 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
     STRLEN len;
     HV *r = (HV *) sv_2mortal((SV *) newHV());
 
+    U32 length = pSpeedyFx->length;
+    U32 *code_table = pSpeedyFx->code_table;
+
     while (*s) {
-        if (pSpeedyFx->length > 256) {
+        if (length > 256) {
             c = utf8_to_uvchr(s, &len);
             s += len;
         } else
             c = *s++;
 
-        if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
+        if (code = code_table[c % length])
             wordhash
                 = (wordhash >> 1)
                 + code;
@@ -140,14 +153,17 @@ SV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
     U16 size = ceil((float) n / 8.0);
     U8 *fv = (U8 *) calloc(1, size);
 
+    U32 length = pSpeedyFx->length;
+    U32 *code_table = pSpeedyFx->code_table;
+
     while (*s) {
-        if (pSpeedyFx->length > 256) {
+        if (length > 256) {
             c = utf8_to_uvchr(s, &len);
             s += len;
         } else
             c = *s++;
 
-        if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
+        if (code = code_table[c % length])
             wordhash
                 = (wordhash >> 1)
                 + code;
@@ -169,14 +185,17 @@ SV *hash_min (SpeedyFx *pSpeedyFx, const char *s) {
     UV c;
     STRLEN len;
 
+    U32 length = pSpeedyFx->length;
+    U32 *code_table = pSpeedyFx->code_table;
+
     while (*s) {
-        if (pSpeedyFx->length > 256) {
+        if (length > 256) {
             c = utf8_to_uvchr(s, &len);
             s += len;
         } else
             c = *s++;
 
-        if (code = pSpeedyFx->code_table[c % pSpeedyFx->length])
+        if (code = code_table[c % length])
             wordhash
                 = (wordhash >> 1)
                 + code;
