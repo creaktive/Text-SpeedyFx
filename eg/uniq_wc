@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+use autodie;
 use strict;
 use utf8;
 use warnings;
@@ -12,25 +13,24 @@ use Text::SpeedyFx;
 
 GetOptions(
     q(help)             => \my $help,
-    q(binmode=s)        => \my $binmode,
     q(length=i)         => \my $len,
     q(seed=i)           => \my $seed,
 ) or pod2usage(q(-verbose) => 1);
 pod2usage(q(-verbose) => 1)
     if $help or $#ARGV != 0;
 
-$len ||= 4096 << 3;
+$len = 4096 << 3
+    unless $len;
+$seed = 0x4c53_4820
+    unless $seed;
 
 map_file
     my $data,
-    shift @ARGV,
-    q(<) . ($binmode // q(:utf8));
+    shift @ARGV;
 
-my $sfx = Text::SpeedyFx->new($seed // 0x4c53_4820);
+my $sfx = Text::SpeedyFx->new($seed);
 my $fv = $sfx->hash_fv($data, $len);
 
-my $empty = 0;
-vec($fv, $_, 1) == 0 && ++$empty
-    for 0 .. $len - 1;
+my $empty = $len - unpack q(%32b*) => $fv;
 
 printf qq(%0.0f\n), -$len * log($empty / $len);

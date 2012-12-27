@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 # ABSTRACT: uses MinHash & SpeedyFx to compare large text data
 # PODNAME: minhash_cmp
+use autodie;
 use strict;
 use utf8;
 use warnings;
@@ -22,11 +23,6 @@ MinHash (or the min-wise independent permutations locality sensitive hashing sch
 =item --help
 
 This.
-
-=item --binmode
-
-You can use this to set the file to be read in binary mode (C<:raw>), C<:utf8>, etc.
-Default: C<:utf8>
 
 =item --epsilon
 
@@ -63,7 +59,6 @@ use Text::SpeedyFx;
 
 GetOptions(
     q(help)             => \my $help,
-    q(binmode=s)        => \my $binmode,
     q(epsilon=f)        => \my $e,
     q(k=i)              => \my $k,
     q(seed=i)           => \my $seed,
@@ -71,13 +66,17 @@ GetOptions(
 pod2usage(q(-verbose) => 1)
     if $help or $#ARGV != 1;
 
-$e //= 0.05;
-$k //= 0 + sprintf
+$e = 0.05
+    unless $e;
+$k = 0 + sprintf
     q(%0.0f),
-    1 / ($e ** 2);
+    1 / ($e ** 2)
+    unless $k;
+$seed = 0x4c53_4820
+    unless $seed;
 
 my $hashes = [];
-srand($seed // 0x4c53_4820);
+srand $seed;
 push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32)
     for 1 .. $k;
 
@@ -85,8 +84,7 @@ my @text = map {
     sub {
         map_file
             my $data,
-            shift,
-            q(<) . ($binmode // q(:utf8));
+            shift;
         return $data;
     }->($_)
 } @ARGV;
