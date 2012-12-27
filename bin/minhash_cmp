@@ -36,12 +36,17 @@ Number of different hash functions to use (default: 400; overrides C<--epsilon>)
 
 Custom seed (integer).
 
+=item --bits
+
+How many bits represent one character.
+The default value, 8, sacrifices Unicode handling but is fast and low on memory footprint.
+The value of 18 encompasses I<Basic Multilingual>, I<Supplementary Multilingual> and I<Supplementary Ideographic> planes.
+
 =back
 
 =head1 CAVEATS
 
-Uses B<MANY RAM>!!!
-Each initialized hash function wastes ~2MB.
+Under C<bits=18> setting, each initialized hash function consumes ~500KB.
 
 =head1 SEE ALSO
 

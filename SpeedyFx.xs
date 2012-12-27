@@ -72,7 +72,12 @@ SpeedyFx *new (U32 seed, U8 bits) {
         fold_init = length;
     }
 
-    Renew(pSpeedyFx, 1 + length, U32);
+    if (pSpeedyFx->length != length) {
+        Renew(pSpeedyFx, 1 + length, U32);
+
+        pSpeedyFx->length = length;
+        code_table = pSpeedyFx->code_table;
+    }
 
     rand_table[0] = seed;
     for (i = 1; i < length; i++)
