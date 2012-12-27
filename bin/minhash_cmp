@@ -38,7 +38,7 @@ Custom seed (integer).
 
 =item --bits
 
-How many bits represent one character.
+How many bits do represent one character.
 The default value, 8, sacrifices Unicode handling but is fast and low on memory footprint.
 The value of 18 encompasses I<Basic Multilingual>, I<Supplementary Multilingual> and I<Supplementary Ideographic> planes.
 

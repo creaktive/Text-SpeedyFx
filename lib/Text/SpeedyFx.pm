@@ -41,9 +41,23 @@ XS implementation of a very fast combined parser/hasher which works well on a va
 
 L<Original implementation|http://www.hpl.hp.com/techreports/2008/HPL-2008-91R1.pdf> is in Java and was adapted for a better Unicode compliance.
 
-=method new([$seed])
+=method new([$seed, $bits])
 
-Initialize parser/hasher, optionally using a specified C<$seed> (default: 1).
+Initialize parser/hasher, can be customized with the options:
+
+=over 4
+
+=item C<$seed>
+
+Hash seed (default: 1).
+
+=item C<$bits>
+
+How many bits do represent one character.
+The default value, 8, sacrifices Unicode handling but is fast and low on memory footprint.
+The value of 18 encompasses I<Basic Multilingual>, I<Supplementary Multilingual> and I<Supplementary Ideographic> planes.
+
+=back
 
 =method hash($string)
 
