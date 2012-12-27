@@ -1,10 +1,11 @@
+#!perl
 use strict;
 use utf8;
 use warnings;
 
 use Test::More;
 
-use_ok(q(Text::SpeedyFx));
+use Text::SpeedyFx;
 
 my $sfx = Text::SpeedyFx->new(1, 8);
 isa_ok($sfx, qw(Text::SpeedyFx));
@@ -18,4 +19,4 @@ ok(
     q(hello world)
 );
 
-done_testing(5);
+done_testing(4);

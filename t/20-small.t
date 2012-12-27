@@ -1,8 +1,10 @@
+#!perl
 use strict;
 use utf8;
 use warnings;
 
 use Data::Dumper;
+use List::MoreUtils qw(distinct);
 use Scalar::Util qw(looks_like_number);
 use Test::More;
 
@@ -10,38 +12,65 @@ use Text::SpeedyFx;
 
 my $sfx = Text::SpeedyFx->new(42);
 
+# https://en.wikipedia.org/wiki/Pangram
 my $str = q(
-    À noite, vovô Kowalsky vê o ímã cair no pé do pingüim
-    queixoso e vovó põe açúcar no chá de tâmaras do jabuti feliz.
+    The quick brown fox jumps over the lazy dog
+    Pójdźże, kiń tę chmurność w głąb flaszy!
+    Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich
+    Любя, съешь щипцы, — вздохнёт мэр, — кайф жгуч
+    أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ‎
 );
+ok(utf8::is_utf8($str), q(is UTF-8 internally));
+
 my $r = $sfx->hash($str);
 isa_ok($r, q(HASH));
 
 my $expect = {
-    106041279   => 2,
-    446277518   => 1,
-    567119914   => 1,
-    692962479   => 1,
-    1060523967  => 1,
-    1068328043  => 1,
-    1310293311  => 2,
-    1481219519  => 1,
-    1707943522  => 1,
-    1752231868  => 1,
-    1779264938  => 1,
-    2172581055  => 1,
-    2193894889  => 1,
-    2765318993  => 1,
-    2793878206  => 1,
-    2931454150  => 1,
-    2963223177  => 1,
-    3114580310  => 1,
-    3337863185  => 1,
-    3980716046  => 1,
-    4007692458  => 1,
-    4068256105  => 1,
+    233612673   => 1,
+    361173977   => 1,
+    375571324   => 1,
+    450365086   => 1,
+    476041838   => 1,
+    790081558   => 1,
+    1055501457  => 1,
+    1074402441  => 1,
+    1455383497  => 1,
+    1701518593  => 1,
+    1802708649  => 1,
+    1925711018  => 1,
+    1942900801  => 1,
+    2214686158  => 1,
+    2300677314  => 1,
+    2433942921  => 1,
+    2462159897  => 1,
+    2580649289  => 2,
+    2871362774  => 1,
+    2936382694  => 1,
+    2960821342  => 1,
+    2992615658  => 1,
+    3032176301  => 1,
+    3080456286  => 1,
+    3288792329  => 1,
+    3354234718  => 1,
+    3395048046  => 1,
+    3496632745  => 1,
+    3567353219  => 1,
+    3579496017  => 1,
+    3579582238  => 1,
+    3587762007  => 1,
+    3588287806  => 1,
+    3609843391  => 1,
+    3825793069  => 1,
+    3831083534  => 1,
+    3888432779  => 1,
+    3950120601  => 1,
+    3969676878  => 1,
+    4281426825  => 1
 };
 my $n = scalar keys %$expect;
+
+my $m = scalar distinct map { lc } ($str =~ /([^\W_]+)/gx);
+is($m, $n, qq(tokenization via regexp gave us $m tokens));
 
 ok(
     scalar keys %$r == $n,
@@ -57,15 +86,15 @@ ok(
 $Data::Dumper::Sortkeys = sub { [ sort { $a <=> $b } keys %{$_[0]} ] };
 $err and diag(Dumper $r);
 
-$r = $sfx->hash_fv($str, 16);
+$r = $sfx->hash_fv($str, 64);
 
 ok(
-    length $r == 2,
+    length $r == 8,
     qq(same feature vector length (@{[ length $r ]}))
 );
 
 ok(
-    unpack(q(b*), $r) eq q(0110001001111011),
+    unpack(q(b*), $r) eq q(0111000001010010010000110100001000000010011001100000000000001011),
     q(feature vector match)
 );
 
@@ -76,8 +105,8 @@ ok(
 );
 
 ok(
-    $r == 106041279,
+    $r == 233612673,
     qq(hash_min match ($r))
 );
 
-done_testing(6 + $n);
+done_testing(8 + $n);
