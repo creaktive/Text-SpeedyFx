@@ -18,7 +18,7 @@ my $str = q(
     Pójdźże, kiń tę chmurność w głąb flaszy!
     Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich
     Любя, съешь щипцы, — вздохнёт мэр, — кайф жгуч
-    أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ‎
+    أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ
 );
 ok(utf8::is_utf8($str), q(is UTF-8 internally));
 
@@ -69,7 +69,7 @@ my $expect = {
 };
 my $n = scalar keys %$expect;
 
-my $m = scalar distinct map { lc } ($str =~ /([^\W_]+)/gx);
+my $m = scalar distinct map { lc } ($str =~ /(\w+)/gx);
 is($m, $n, qq(tokenization via regexp gave us $m tokens));
 
 ok(

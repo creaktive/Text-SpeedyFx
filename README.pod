@@ -144,6 +144,8 @@ F<enwik8> from the L<Large Text Compression Benchmark|https://cs.fit.edu/~mmahon
     hash_fv        90.5 MB/s  364%            50%       --       -9%
     hash_min       99.6 MB/s  411%            66%      10%        --
 
+All the tests except C<hash_min_utf8> were made in L<Latin-1 mode|/UNICODE SUPPORT>.
+
 =head1 REFERENCES
 
 =over 4

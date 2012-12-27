@@ -119,6 +119,8 @@ The test platform configuration:
     hash_fv        90.5 MB/s  364%            50%       --       -9%
     hash_min       99.6 MB/s  411%            66%      10%        --
 
+All the tests except C<hash_min_utf8> were made in L<Latin-1 mode|/UNICODE SUPPORT>.
+
 =head1 REFERENCES
 
 =for :list
