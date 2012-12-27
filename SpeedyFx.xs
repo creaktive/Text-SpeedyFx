@@ -144,14 +144,15 @@ HV *hash (SpeedyFx *pSpeedyFx, const char *s) {
 
 #define SetBit(a, b) (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
 
-SV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U16 n) {
+SV *hash_fv (SpeedyFx *pSpeedyFx, const char *s, U32 n) {
     U32 code;
     U32 wordhash = 0;
     U32 i = 0;
     UV c;
     STRLEN len;
-    U16 size = ceil((float) n / 8.0);
-    U8 *fv = (U8 *) calloc(1, size);
+    U32 size = ceil((float) n / 8.0);
+    U8 *fv;
+    Newxz(fv, size, U8);
 
     U32 length = pSpeedyFx->length;
     U32 *code_table = pSpeedyFx->code_table;
@@ -241,7 +242,7 @@ SV *
 hash_fv (pSpeedyFx, str, n)
     Text::SpeedyFx pSpeedyFx
     const char *str
-    U16 n
+    U32 n
 
 SV *
 hash_min (pSpeedyFx, str)
