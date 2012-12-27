@@ -51,7 +51,6 @@ Each initialized hash function wastes ~2MB.
 
 =cut
 
-use File::Map qw(map_file);
 use Getopt::Long;
 use List::MoreUtils qw(distinct);
 use Pod::Usage;
@@ -62,8 +61,9 @@ GetOptions(
     q(epsilon=f)        => \my $e,
     q(k=i)              => \my $k,
     q(seed=i)           => \my $seed,
-) or pod2usage(q(-verbose) => 1);
-pod2usage(q(-verbose) => 1)
+    q(bits=i)           => \my $bits,
+) or pod2usage(-verbose => 1);
+pod2usage(-verbose => 2)
     if $help or $#ARGV != 1;
 
 $e = 0.05
@@ -74,17 +74,21 @@ $k = 0 + sprintf
     unless $k;
 $seed = 0x4c53_4820
     unless $seed;
+$bits = 8
+    unless $bits;
 
 my $hashes = [];
 srand $seed;
-push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32)
+push @{$hashes}, Text::SpeedyFx->new(int rand 2 ** 32, $bits)
     for 1 .. $k;
 
 my @text = map {
     sub {
-        map_file
-            my $data,
-            shift;
+        open my $fh, q(<:mmap), shift;
+        local $/ = undef;
+        my $data = <$fh>;
+        close $fh;
+
         return $data;
     }->($_)
 } @ARGV;

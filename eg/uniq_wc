@@ -4,7 +4,6 @@ use strict;
 use utf8;
 use warnings;
 
-use File::Map qw(map_file);
 use Getopt::Long;
 use Pod::Usage;
 use Text::SpeedyFx;
@@ -15,20 +14,27 @@ GetOptions(
     q(help)             => \my $help,
     q(length=i)         => \my $len,
     q(seed=i)           => \my $seed,
-) or pod2usage(q(-verbose) => 1);
-pod2usage(q(-verbose) => 1)
+    q(bits=i)           => \my $bits,
+) or pod2usage(-verbose => 1);
+pod2usage(-verbose => 2)
     if $help or $#ARGV != 0;
 
 $len = 4096 << 3
     unless $len;
 $seed = 0x4c53_4820
     unless $seed;
+$bits = 8
+    unless $bits;
 
-map_file
-    my $data,
-    shift @ARGV;
+my $data;
+{
+    local $/ = undef;
+    open my $fh, q(<:mmap), shift @ARGV;
+    $data = <$fh>;
+    close $fh;
+}
 
-my $sfx = Text::SpeedyFx->new($seed);
+my $sfx = Text::SpeedyFx->new($seed, $bits);
 my $fv = $sfx->hash_fv($data, $len);
 
 my $empty = $len - unpack q(%32b*) => $fv;
