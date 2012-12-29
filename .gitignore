@@ -6,4 +6,4 @@ blib/*
 Makefile
 pm_to_blib
 nytprof*
-enwik8
+enwik[89]
