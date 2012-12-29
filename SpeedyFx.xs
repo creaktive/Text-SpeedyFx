@@ -106,15 +106,42 @@ void DESTROY (SpeedyFx *pSpeedyFx) {
     Safefree(pSpeedyFx);
 }
 
+/**
+ * C++ version 0.4 char* style "itoa":
+ * Written by Lukás Chmela
+ * Released under GPLv3.
+ * http://www.jb.man.ac.uk/~slowe/cpp/itoa.html#newest
+ */
+U32 _itoa(U32 value, U8 *result) {
+    U8 *ptr = result, *ptr1 = result, tmp_char;
+    U32 tmp_value, len;
+
+    do {
+        tmp_value = value;
+        value /= 10;
+        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * 10)];
+    } while (value);
+
+    len = ptr - result;
+    *ptr-- = '\0';
+
+    while (ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr--= *ptr1;
+        *ptr1++ = tmp_char;
+    }
+
+    return len;
+}
+
 void _store(HV *r, U32 *wordhash) {
     double count = 1;
     U8 buf[16];
-    U8 len;
+    U32 len;
     SV **ps;
 
     if (*wordhash) {
-        sprintf(buf, "%u", (unsigned int) *wordhash);
-        len = strlen(buf);
+        len = _itoa(*wordhash, buf);
 
         ps = hv_fetch(r, buf, len, 0);
         if (ps && SvOK(*ps))
