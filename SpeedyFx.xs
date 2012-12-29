@@ -151,18 +151,20 @@ void _store(HV *r, U32 wordhash) {
     }
 }
 
-#ifndef _SPEEDYFX
+
+#define _SPEEDYFX_INIT                                  \
+    U32 code, c;                                        \
+    U32 wordhash = 0;                                   \
+    STRLEN len;                                         \
+    U32 length = pSpeedyFx->length;                     \
+    U32 *code_table = pSpeedyFx->code_table;            \
+    U8 is_utf8 = (length > 256) ? 1 : 0;                \
+    U8 *s, *se;                                         \
+    s = (U8 *) SvPV(str, len);                          \
+    se = s + len;
+
 #define _SPEEDYFX(_STORE)                               \
     STMT_START {                                        \
-        U32 code, c;                                    \
-        U32 wordhash = 0;                               \
-        STRLEN len;                                     \
-        U32 length = pSpeedyFx->length;                 \
-        U32 *code_table = pSpeedyFx->code_table;        \
-        U8 is_utf8 = (length > 256) ? 1 : 0;            \
-        U8 *s, *se;                                     \
-        s = (U8 *) SvPV(str, len);                      \
-        se = s + len;                                   \
         while (*s) {                                    \
             if (is_utf8) {                              \
                 c = ChrCode(s, se, &len);               \
@@ -182,35 +184,8 @@ void _store(HV *r, U32 wordhash) {
             _STORE;                                     \
         }                                               \
     } STMT_END
-#endif
-
-HV *hash (SpeedyFx *pSpeedyFx, SV *str) {
-    HV *r = (HV *) sv_2mortal((SV *) newHV());
-
-    _SPEEDYFX(_store(r, wordhash));
-
-    return r;
-}
 
 #define SetBit(a, b) (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
-
-SV *hash_fv (SpeedyFx *pSpeedyFx, SV *str, U32 n) {
-    U32 size = ceil((float) n / 8.0);
-    char *fv;
-    Newxz(fv, size, char);
-
-    _SPEEDYFX(SetBit(fv, wordhash % n));
-
-    return newSVpv(fv, size);
-}
-
-SV *hash_min (SpeedyFx *pSpeedyFx, SV *str) {
-    U32 min = 0xffffffff;
-
-    _SPEEDYFX(if (min > wordhash) min = wordhash);
-
-    return newSVnv(min);
-}
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 
@@ -232,18 +207,44 @@ CODE:
 OUTPUT:
     RETVAL
 
-HV *
+void
 hash (pSpeedyFx, str)
     Text::SpeedyFx pSpeedyFx
     SV *str
+INIT:
+    _SPEEDYFX_INIT;
+    HV *results = newHV();
+PPCODE:
+    _SPEEDYFX(_store(results, wordhash));
 
-SV *
+    ST(0) = sv_2mortal((SV *) newRV_noinc((SV *) results));
+    XSRETURN(1);
+
+void
 hash_fv (pSpeedyFx, str, n)
     Text::SpeedyFx pSpeedyFx
     SV *str
     U32 n
+INIT:
+    _SPEEDYFX_INIT;
+    U32 size = ceil((float) n / 8.0);
+    char *fv;
+    Newxz(fv, size, char);
+PPCODE:
+    _SPEEDYFX(SetBit(fv, wordhash % n));
 
-SV *
+    ST(0) = sv_2mortal(newSVpv(fv, size));
+    XSRETURN(1);
+
+void
 hash_min (pSpeedyFx, str)
     Text::SpeedyFx pSpeedyFx
     SV *str
+INIT:
+    _SPEEDYFX_INIT;
+    U32 min = 0xffffffff;
+PPCODE:
+    _SPEEDYFX(if (min > wordhash) min = wordhash);
+
+    ST(0) = sv_2mortal(newSVnv(min));
+    XSRETURN(1);
