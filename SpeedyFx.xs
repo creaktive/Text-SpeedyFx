@@ -19,6 +19,8 @@ typedef SpeedyFx *Text__SpeedyFx;
 #define ChrCode(u, v, len) (U32) utf8_to_uvchr(u, len)
 #endif
 
+#define SetBit(a, b) (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
+
 SpeedyFx *new (U32 seed, U8 bits) {
     U32 i;
     U8 s[8];
@@ -158,19 +160,17 @@ void _store(HV *r, U32 wordhash) {
     STRLEN len;                                         \
     U32 length = pSpeedyFx->length;                     \
     U32 *code_table = pSpeedyFx->code_table;            \
-    U8 is_utf8 = (length > 256) ? 1 : 0;                \
     U8 *s, *se;                                         \
     s = (U8 *) SvPV(str, len);                          \
     se = s + len;
 
-#define _SPEEDYFX(_STORE)                               \
+#define _WALK_LATIN1    c = *s++
+#define _WALK_UTF8      c = ChrCode(s, se, &len); s += len
+
+#define _SPEEDYFX(_STORE, _WALK)                        \
     STMT_START {                                        \
         while (*s) {                                    \
-            if (is_utf8) {                              \
-                c = ChrCode(s, se, &len);               \
-                s += len;                               \
-            } else                                      \
-                c = *s++;                               \
+            _WALK;                                      \
             if ((code = code_table[c % length]) != 0)   \
                 wordhash                                \
                     = (wordhash >> 1)                   \
@@ -184,8 +184,6 @@ void _store(HV *r, U32 wordhash) {
             _STORE;                                     \
         }                                               \
     } STMT_END
-
-#define SetBit(a, b) (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 
@@ -215,7 +213,11 @@ INIT:
     _SPEEDYFX_INIT;
     HV *results = newHV();
 PPCODE:
-    _SPEEDYFX(_store(results, wordhash));
+    if (length > 256) {
+        _SPEEDYFX(_store(results, wordhash), _WALK_UTF8);
+    } else {
+        _SPEEDYFX(_store(results, wordhash), _WALK_LATIN1);
+    }
 
     ST(0) = sv_2mortal((SV *) newRV_noinc((SV *) results));
     XSRETURN(1);
@@ -231,7 +233,11 @@ INIT:
     char *fv;
     Newxz(fv, size, char);
 PPCODE:
-    _SPEEDYFX(SetBit(fv, wordhash % n));
+    if (length > 256) {
+        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_UTF8);
+    } else {
+        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_LATIN1);
+    }
 
     ST(0) = sv_2mortal(newSVpv(fv, size));
     XSRETURN(1);
@@ -244,7 +250,11 @@ INIT:
     _SPEEDYFX_INIT;
     U32 min = 0xffffffff;
 PPCODE:
-    _SPEEDYFX(if (min > wordhash) min = wordhash);
+    if (length > 256) {
+        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_UTF8);
+    } else {
+        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_LATIN1);
+    }
 
     ST(0) = sv_2mortal(newSVnv(min));
     XSRETURN(1);
