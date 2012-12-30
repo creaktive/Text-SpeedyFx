@@ -49,6 +49,7 @@ SpeedyFx *new (U32 seed, U8 bits) {
     pSpeedyFx->length = length;
     code_table = pSpeedyFx->code_table;
 
+    fold_table[0] = 0;
     if (fold_init < length) {
         for (i = fold_init + 1; i < length; i++) {
             if (i >= 0xd800 && i <= 0xdfff)         // high/low-surrogate code points
@@ -153,12 +154,10 @@ void _store(HV *r, U32 wordhash) {
     }
 }
 
-
 #define _SPEEDYFX_INIT                                  \
     U32 code, c;                                        \
     U32 wordhash = 0;                                   \
     STRLEN len;                                         \
-    U32 length = pSpeedyFx->length;                     \
     U32 *code_table = pSpeedyFx->code_table;            \
     U8 *s, *se;                                         \
     s = (U8 *) SvPV(str, len);                          \
@@ -167,14 +166,12 @@ void _store(HV *r, U32 wordhash) {
 #define _WALK_LATIN1    c = *s++
 #define _WALK_UTF8      c = ChrCode(s, se, &len); s += len
 
-#define _SPEEDYFX(_STORE, _WALK)                        \
+#define _SPEEDYFX(_STORE, _WALK, _LENGTH)               \
     STMT_START {                                        \
         while (*s) {                                    \
             _WALK;                                      \
-            if ((code = code_table[c % length]) != 0)   \
-                wordhash                                \
-                    = (wordhash >> 1)                   \
-                    + code;                             \
+            if ((code = code_table[c % _LENGTH]) != 0)  \
+                wordhash = (wordhash >> 1) + code;      \
             else if (wordhash) {                        \
                 _STORE;                                 \
                 wordhash = 0;                           \
@@ -213,10 +210,10 @@ INIT:
     _SPEEDYFX_INIT;
     HV *results = newHV();
 PPCODE:
-    if (length > 256) {
-        _SPEEDYFX(_store(results, wordhash), _WALK_UTF8);
+    if (pSpeedyFx->length > 256) {
+        _SPEEDYFX(_store(results, wordhash), _WALK_UTF8, pSpeedyFx->length);
     } else {
-        _SPEEDYFX(_store(results, wordhash), _WALK_LATIN1);
+        _SPEEDYFX(_store(results, wordhash), _WALK_LATIN1, 256);
     }
 
     ST(0) = sv_2mortal((SV *) newRV_noinc((SV *) results));
@@ -233,10 +230,10 @@ INIT:
     char *fv;
     Newxz(fv, size, char);
 PPCODE:
-    if (length > 256) {
-        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_UTF8);
+    if (pSpeedyFx->length > 256) {
+        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_UTF8, pSpeedyFx->length);
     } else {
-        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_LATIN1);
+        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_LATIN1, 256);
     }
 
     ST(0) = sv_2mortal(newSVpv(fv, size));
@@ -250,10 +247,10 @@ INIT:
     _SPEEDYFX_INIT;
     U32 min = 0xffffffff;
 PPCODE:
-    if (length > 256) {
-        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_UTF8);
+    if (pSpeedyFx->length > 256) {
+        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_UTF8, pSpeedyFx->length);
     } else {
-        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_LATIN1);
+        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_LATIN1, 256);
     }
 
     ST(0) = sv_2mortal(newSVnv(min));
