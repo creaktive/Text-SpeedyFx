@@ -158,6 +158,7 @@ void _store(HV *r, U32 wordhash) {
     U32 code, c;                                        \
     U32 wordhash = 0;                                   \
     STRLEN len;                                         \
+    U32 length = pSpeedyFx->length;                     \
     U32 *code_table = pSpeedyFx->code_table;            \
     U8 *s, *se;                                         \
     s = (U8 *) SvPV(str, len);                          \
@@ -210,8 +211,8 @@ INIT:
     _SPEEDYFX_INIT;
     HV *results = newHV();
 PPCODE:
-    if (pSpeedyFx->length > 256) {
-        _SPEEDYFX(_store(results, wordhash), _WALK_UTF8, pSpeedyFx->length);
+    if (length > 256) {
+        _SPEEDYFX(_store(results, wordhash), _WALK_UTF8, length);
     } else {
         _SPEEDYFX(_store(results, wordhash), _WALK_LATIN1, 256);
     }
@@ -230,8 +231,8 @@ INIT:
     char *fv;
     Newxz(fv, size, char);
 PPCODE:
-    if (pSpeedyFx->length > 256) {
-        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_UTF8, pSpeedyFx->length);
+    if (length > 256) {
+        _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_UTF8, length);
     } else {
         _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_LATIN1, 256);
     }
@@ -247,8 +248,8 @@ INIT:
     _SPEEDYFX_INIT;
     U32 min = 0xffffffff;
 PPCODE:
-    if (pSpeedyFx->length > 256) {
-        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_UTF8, pSpeedyFx->length);
+    if (length > 256) {
+        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_UTF8, length);
     } else {
         _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_LATIN1, 256);
     }
