@@ -95,7 +95,7 @@ C<hash_fv()>/C<hash_min()> variants are up to 1000% faster!
 
 Parses C<$octets> and returns a feature vector (string of bits) with length C<$n>.
 C<$n> is supposed to be a multiplier of 8, as the length of the resulting feature vector is C<ceil($n / 8)>.
-See the included utilities L<cosine_sim> and L<uniq_wc>.
+See the included utilities L<cosine_cmp> and L<uniq_wc>.
 
 =method hash_min($octets)
 
@@ -135,6 +135,6 @@ See also the F<eg/benchmark.pl> script.
 * L<Extremely Fast Text Feature Extraction for Classification and Indexing|http://www.hpl.hp.com/techreports/2008/HPL-2008-91R1.pdf> by L<George Forman|http://www.hpl.hp.com/personal/George_Forman/> and L<Evan Kirshenbaum|http://www.kirshenbaum.net/evan/index.htm>
 * L<MinHash — выявляем похожие множества|http://habrahabr.ru/post/115147/>
 * L<Фильтр Блума|http://habrahabr.ru/post/112069/>
-* L<cosine_sim>, L<minhash_cmp> and L<uniq_wc> utilities from this distribution
+* L<cosine_cmp>, L<minhash_cmp> and L<uniq_wc> utilities from this distribution
 
 =cut

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ABSTRACT: compute cosine similarity between two documents
-# PODNAME: cosine_sim
+# PODNAME: cosine_cmp
 use autodie;
 use strict;
 use utf8;
@@ -10,7 +10,7 @@ use warnings;
 
 =head1 SYNOPSIS
 
-    cosine_sim [options] FILE1 FILE2
+    cosine_cmp [options] FILE1 FILE2
 
 =head1 DESCRIPTION
 
