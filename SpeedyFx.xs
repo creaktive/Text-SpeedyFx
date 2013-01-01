@@ -115,7 +115,7 @@ void DESTROY (SpeedyFx *pSpeedyFx) {
  * Released under GPLv3.
  * http://www.jb.man.ac.uk/~slowe/cpp/itoa.html#newest
  */
-U32 _itoa(U32 value, char *result) {
+U32 speedyfx_itoa(U32 value, char *result) {
     char *ptr = result, *ptr1 = result, tmp_char;
     U32 tmp_value, len;
 
@@ -137,14 +137,14 @@ U32 _itoa(U32 value, char *result) {
     return len;
 }
 
-void _store(HV *r, U32 wordhash) {
+void speedyfx_store(HV *r, U32 wordhash) {
     double count = 1;
     char buf[16];
     U32 len;
     SV **ps;
 
     if (wordhash) {
-        len = _itoa(wordhash, buf);
+        len = speedyfx_itoa(wordhash, buf);
 
         ps = hv_fetch(r, buf, len, 0);
         if (ps && SvOK(*ps))
@@ -212,9 +212,9 @@ INIT:
     HV *results = newHV();
 PPCODE:
     if (length > 256) {
-        _SPEEDYFX(_store(results, wordhash), _WALK_UTF8, length);
+        _SPEEDYFX(speedyfx_store(results, wordhash), _WALK_UTF8, length);
     } else {
-        _SPEEDYFX(_store(results, wordhash), _WALK_LATIN1, 256);
+        _SPEEDYFX(speedyfx_store(results, wordhash), _WALK_LATIN1, 256);
     }
 
     ST(0) = sv_2mortal((SV *) newRV_noinc((SV *) results));
