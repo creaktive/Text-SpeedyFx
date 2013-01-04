@@ -21,8 +21,8 @@ cmpthese(10 => {
     hash            => sub { $sfx_latin1->hash($data) },
     hash_utf8       => sub { $sfx->hash($data) },
     hash_fv         => sub { $sfx_latin1->hash_fv($data, 1024 << 3) },
-    hash_fv_utf8    => sub { $sfx->hash_fv($data, 1024 << 3) },
     hash_min        => sub { $sfx_latin1->hash_min($data) },
+    hash_min_utf8   => sub { $sfx->hash_min($data) },
     murmur_utf8     => sub { tokenize($data) },
 });
 

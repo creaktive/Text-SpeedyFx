@@ -4,14 +4,31 @@
 
 #include "ppport.h"
 
-#define MAX_MAP_SIZE 0x2ffff
+#include "nedtrie.h"
+
+#define MAX_MAP_SIZE    0x2ffff
+#define TRIE_GROW_STEP  (1 << 18)
 
 typedef struct {
     U32 length;
     U32 code_table[];
 } SpeedyFx;
-
 typedef SpeedyFx *Text__SpeedyFx;
+
+typedef struct sfxaa_s sfxaa_t;
+struct sfxaa_s {
+    NEDTRIE_ENTRY(sfxaa_s) link;
+    U32 key;
+    U32 val;
+};
+typedef struct sfxaa_tree_s sfxaa_tree_t;
+NEDTRIE_HEAD(sfxaa_tree_s, sfxaa_s);
+
+U32 sfxaakeyfunct(const sfxaa_t *r) {
+    return r->key;
+}
+
+NEDTRIE_GENERATE(static, sfxaa_tree_s, sfxaa_s, link, sfxaakeyfunct, NEDTRIE_NOBBLEONES(sfxaa_tree_s))
 
 #if PERL_VERSION >= 16
 #define ChrCode(u, v, len) (U32) utf8_to_uvchr_buf(u, v, len);
@@ -19,7 +36,8 @@ typedef SpeedyFx *Text__SpeedyFx;
 #define ChrCode(u, v, len) (U32) utf8_to_uvchr(u, len)
 #endif
 
-#define SetBit(a, b) (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
+#define SetBit(a, b)    (((U8 *) a)[(b) >> 3] |= (1 << ((b) & 7)))
+#define FastMin(x, y)   (y ^ ((x ^ y) & -(x < y)))
 
 SpeedyFx *new (U32 seed, U8 bits) {
     U32 i;
@@ -183,6 +201,21 @@ void speedyfx_store(HV *r, U32 wordhash) {
         }                                               \
     } STMT_END
 
+#define _NEDTRIE_STORE                                  \
+    tmp.key = wordhash;                                 \
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &sfxaatree, &tmp)) != 0)\
+        p->val++;                                       \
+    else {                                              \
+        p = &uniq[count++];                             \
+        p->key = wordhash;                              \
+        p->val = 1;                                     \
+        NEDTRIE_INSERT(sfxaa_tree_s, &sfxaatree, p);    \
+        if (count >= max_count) {                       \
+            max_count += TRIE_GROW_STEP;                \
+            Renewc(uniq, max_count, sfxaa_t, sfxaa_t);  \
+        }                                               \
+    }
+
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 
 PROTOTYPES: ENABLE
@@ -209,13 +242,30 @@ hash (pSpeedyFx, str)
     SV *str
 INIT:
     _SPEEDYFX_INIT;
-    HV *results = newHV();
+    HV *results;
+    static sfxaa_tree_t sfxaatree;
+    sfxaa_t *uniq, tmp, *p;
+    U32 count = 0;
+    U32 max_count = TRIE_GROW_STEP;
+    SV **ps;
+    char buf[16];
 PPCODE:
+    NEDTRIE_INIT(&sfxaatree);
+
+    Newx(uniq, max_count, sfxaa_t);
+
     if (length > 256) {
-        _SPEEDYFX(speedyfx_store(results, wordhash), _WALK_UTF8, length);
+        _SPEEDYFX(_NEDTRIE_STORE, _WALK_UTF8, length);
     } else {
-        _SPEEDYFX(speedyfx_store(results, wordhash), _WALK_LATIN1, 256);
+        _SPEEDYFX(_NEDTRIE_STORE, _WALK_LATIN1, 256);
     }
+
+    results = newHV();
+    NEDTRIE_FOREACH(p, sfxaa_tree_s, &sfxaatree) {
+        length = speedyfx_itoa(p->key, buf);
+        ps = hv_store(results, buf, length, newSVnv(p->val), 0);
+    }
+    Safefree(uniq);
 
     ST(0) = sv_2mortal((SV *) newRV_noinc((SV *) results));
     XSRETURN(1);
@@ -229,8 +279,9 @@ INIT:
     _SPEEDYFX_INIT;
     U32 size = ceil((float) n / 8.0);
     char *fv;
-    Newxz(fv, size, char);
 PPCODE:
+    Newxz(fv, size, char);
+
     if (length > 256) {
         _SPEEDYFX(SetBit(fv, wordhash % n), _WALK_UTF8, length);
     } else {
@@ -249,9 +300,9 @@ INIT:
     U32 min = 0xffffffff;
 PPCODE:
     if (length > 256) {
-        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_UTF8, length);
+        _SPEEDYFX(min = FastMin(min, wordhash), _WALK_UTF8, length);
     } else {
-        _SPEEDYFX(if (min > wordhash) min = wordhash, _WALK_LATIN1, 256);
+        _SPEEDYFX(min = FastMin(min, wordhash), _WALK_LATIN1, 256);
     }
 
     ST(0) = sv_2mortal(newSVnv(min));
