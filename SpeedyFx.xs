@@ -155,23 +155,6 @@ U32 speedyfx_itoa(U32 value, char *result) {
     return len;
 }
 
-void speedyfx_store(HV *r, U32 wordhash) {
-    double count = 1;
-    char buf[16];
-    U32 len;
-    SV **ps;
-
-    if (wordhash) {
-        len = speedyfx_itoa(wordhash, buf);
-
-        ps = hv_fetch(r, buf, len, 0);
-        if (ps && SvOK(*ps))
-            count = SvNV(*ps) + 1;
-
-        ps = hv_store(r, buf, len, newSVnv(count), 0);
-    }
-}
-
 #define _SPEEDYFX_INIT                                  \
     U32 code, c;                                        \
     U32 wordhash = 0;                                   \
