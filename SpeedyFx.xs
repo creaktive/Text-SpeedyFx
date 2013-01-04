@@ -7,7 +7,7 @@
 #include "nedtrie.h"
 
 #define MAX_MAP_SIZE    0x2ffff
-#define TRIE_GROW_STEP  (1 << 18)
+#define MAX_TRIE_SIZE   (1 << 21)
 
 typedef struct {
     U32 length;
@@ -210,10 +210,8 @@ void speedyfx_store(HV *r, U32 wordhash) {
         p->key = wordhash;                              \
         p->val = 1;                                     \
         NEDTRIE_INSERT(sfxaa_tree_s, &sfxaatree, p);    \
-        if (count >= max_count) {                       \
-            max_count += TRIE_GROW_STEP;                \
-            Renewc(uniq, max_count, sfxaa_t, sfxaa_t);  \
-        }                                               \
+        if (count >= MAX_TRIE_SIZE)                     \
+            croak("too many unique tokens in a single data chunk"); \
     }
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
@@ -246,13 +244,12 @@ INIT:
     static sfxaa_tree_t sfxaatree;
     sfxaa_t *uniq, tmp, *p;
     U32 count = 0;
-    U32 max_count = TRIE_GROW_STEP;
     SV **ps;
     char buf[16];
 PPCODE:
     NEDTRIE_INIT(&sfxaatree);
 
-    Newx(uniq, max_count, sfxaa_t);
+    Newx(uniq, MAX_TRIE_SIZE, sfxaa_t);
 
     if (length > 256) {
         _SPEEDYFX(_NEDTRIE_STORE, _WALK_UTF8, length);
