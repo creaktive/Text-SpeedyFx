@@ -401,7 +401,8 @@ INIT:
     sfxaa_t *p, tmp;
 PPCODE:
     res = result_init();
-    pSpeedyFxResult = result_addr(res);
+    if ((pSpeedyFxResult = result_addr(res)) == NULL)
+        croak("TARFU");
 
     if (length > 256) {
         _SPEEDYFX(_NEDTRIE_STORE, _WALK_UTF8, length);
