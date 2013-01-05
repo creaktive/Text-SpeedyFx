@@ -23,7 +23,8 @@ my $n = 20;
 
 # warm up
 Text::SpeedyFx->new(($_) x 2)
-        for 8 .. 18;
+    for 8 .. 18;
+Text::SpeedyFx->new->hash(q(Hello, World!));
 
 for my $bits (reverse 1 .. $n) {
     test_leak {
