@@ -61,7 +61,7 @@ In fact, L<Text::SpeedyFx> constructor accepts bit range between 8 and 18 to add
 =head2 LATIN-1 SUPPORT
 
 8 bit address space has one special meaning: it completely disables multibyte support.
-In 8 bit mode, each instance will only allocate 256 bytes and hashing will run up to 400% faster!
+In 8 bit mode, each instance will only allocate 256 bytes and hashing will run up to 340% faster!
 Tokenization will fallback to I<ISO 8859-1 West European languages (Latin-1)> character definitions.
 
 =method new([$seed, $bits])
@@ -89,7 +89,7 @@ Parses C<$octets> and returns a hash reference where keys are the hashed tokens 
 C<$octets> are assumed to represent UTF-8 string unless L<Text::SpeedyFx> is instantiated with L</$bits> == 8
 (which forces Latin-1 mode, see L</UNICODE SUPPORT>).
 Note that this is the slowest form due to the (computational) complexity of the Perl hash structure itself:
-C<hash_fv()>/C<hash_min()> variants are up to 400% faster!
+C<hash_fv()>/C<hash_min()> variants are up to 260% faster!
 
 =method hash_fv($octets, $n)
 
@@ -113,13 +113,13 @@ The test platform configuration:
 * Perl v5.16.1 (installed via L<perlbrew>);
 * F<enwik8> from the L<Large Text Compression Benchmark|https://cs.fit.edu/~mmahoney/compression/text.html>.
 
-                       Rate murmur_utf8 hash_utf8  hash hash_min_utf8 hash_fv hash_min
-    murmur_utf8      6 MB/s          --      -77%  -87%          -88%    -97%     -97%
-    hash_utf8       25 MB/s        330%        --  -43%          -47%    -87%     -88%
-    hash            44 MB/s        658%       76%    --           -7%    -78%     -80%
-    hash_min_utf8   47 MB/s        717%       90%    8%            --    -76%     -78%
-    hash_fv        195 MB/s       3285%      688%  347%          314%      --      -9%
-    hash_min       215 MB/s       3634%      769%  393%          357%     10%       --
+                       Rate murmur_utf8 hash_utf8 hash_min_utf8  hash hash_fv hash_min
+    murmur_utf8      6 MB/s          --      -79%          -86%  -89%    -97%     -97%
+    hash_utf8       30 MB/s        376%        --          -35%  -47%    -84%     -85%
+    hash_min_utf8   47 MB/s        637%       55%            --  -18%    -76%     -77%
+    hash            58 MB/s        803%       90%           23%    --    -70%     -72%
+    hash_fv        194 MB/s       2946%      541%          313%  237%      --      -6%
+    hash_min       206 MB/s       3143%      582%          340%  259%      6%       --
 
 All the tests except the ones with C<_utf8> suffix were made in L<Latin-1 mode|/UNICODE SUPPORT>.
 For comparison, C<murmur_utf8> was implemented using L<Digest::MurmurHash> hasher and native regular expression tokenizer:
