@@ -85,10 +85,10 @@ See also L</UNICODE SUPPORT>
 
 =method hash($octets)
 
-Parses C<$octets> and returns a hash reference where keys are the hashed tokens and values are their respective count.
+Parses C<$octets> and returns a hash reference (not exactly; see L</CAVEAT>) where keys are the hashed tokens and values are their respective count.
 C<$octets> are assumed to represent UTF-8 string unless L<Text::SpeedyFx> is instantiated with L</$bits> == 8
 (which forces Latin-1 mode, see L</UNICODE SUPPORT>).
-Note that this is the slowest form due to the (computational) complexity of the Perl hash structure itself:
+Note that this is the slowest form due to the (computational) complexity of the L<associative array|https://en.wikipedia.org/wiki/Associative_array> data structure itself:
 C<hash_fv()>/C<hash_min()> variants are up to 260% faster!
 
 =method hash_fv($octets, $n)
@@ -128,6 +128,21 @@ For comparison, C<murmur_utf8> was implemented using L<Digest::MurmurHash> hashe
         while $data =~ /(\w+)/gx;
 
 See also the F<eg/benchmark.pl> script.
+
+=head1 CAVEAT
+
+For performance reasons, C<hash()> method returns a L<tied hash|perltie> which is an interface to
+L<nedtries|http://www.nedprod.com/programs/portable/nedtries/>.
+The interesting property of a L<trie data structure|https://en.wikipedia.org/wiki/Trie> is the ordering, so:
+
+    # This:
+    $fv = $sfx->hash($data);
+    ($min) = each %$fv;
+    # Is the same as this:
+    ($min) = $sfx->hash_min($data);
+    # (albeit the later being 2x faster)
+
+The downside is the magic involved. C<delete> breaks the key order, also.
 
 =head1 REFERENCES
 
