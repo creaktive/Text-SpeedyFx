@@ -8,6 +8,7 @@
 
 #define MAX_MAP_SIZE    0x2ffff
 #define MAX_TRIE_SIZE   (1 << 21)
+#define SFX_SIGNATURE   0x4c9da21d
 
 typedef struct {
     U32 length;
@@ -31,6 +32,7 @@ U32 sfxaakeyfunct(const sfxaa_t *r) {
 NEDTRIE_GENERATE(static, sfxaa_tree_s, sfxaa_s, link, sfxaakeyfunct, NEDTRIE_NOBBLEONES(sfxaa_tree_s))
 
 typedef struct {
+    U32 signature;
     U32 count;
     sfxaa_tree_t root;
     sfxaa_t *last;
@@ -220,8 +222,10 @@ PREINIT:
     sfxaa_t *p;
 CODE:
     Newx(pSpeedyFxResult, 1, SpeedyFxResult);
-    NEDTRIE_INIT(&(pSpeedyFxResult->root));
+    pSpeedyFxResult->signature = SFX_SIGNATURE;
     pSpeedyFxResult->count = 0;
+
+    NEDTRIE_INIT(&(pSpeedyFxResult->root));
 
     thingy = newHV();
     tie = newRV_noinc(newSViv(PTR2IV(pSpeedyFxResult)));
@@ -364,6 +368,30 @@ CODE:
     RETVAL = new(seed, bits);
 OUTPUT:
     RETVAL
+
+SV *
+peek_addr (self)
+    SV *self
+INIT:
+    SV *hash;
+    MAGIC *magic;
+    SV *attr;
+    SpeedyFxResult *pSpeedyFxResult;
+CODE:
+    hash = SvRV(self);
+    if (SvRMAGICAL((SV *) hash)) {
+        if ((magic = mg_find((SV *) hash, PERL_MAGIC_tied)) != NULL) {
+            attr = magic->mg_obj;
+            if (SvROK(attr)) {
+                pSpeedyFxResult = (SpeedyFxResult *) SvIV(SvRV(attr));
+                if (pSpeedyFxResult->signature == SFX_SIGNATURE) {
+                    ST(0) = sv_2mortal(newSViv(SvIV(SvRV(attr))));
+                    XSRETURN(1);
+                }
+            }
+        }
+    }
+    XSRETURN_UNDEF;
 
 void
 hash (pSpeedyFx, str)
