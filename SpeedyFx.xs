@@ -30,6 +30,14 @@ U32 sfxaakeyfunct(const sfxaa_t *r) {
 
 NEDTRIE_GENERATE(static, sfxaa_tree_s, sfxaa_s, link, sfxaakeyfunct, NEDTRIE_NOBBLEONES(sfxaa_tree_s))
 
+typedef struct {
+    U32 count;
+    sfxaa_tree_t root;
+    sfxaa_t *last;
+    sfxaa_t index[MAX_TRIE_SIZE];
+} SpeedyFxResult;
+typedef SpeedyFxResult *Text__SpeedyFx__Result;
+
 #if PERL_VERSION >= 16
 #define ChrCode(u, v, len) (U32) utf8_to_uvchr_buf(u, v, len);
 #else
@@ -196,6 +204,111 @@ U32 speedyfx_itoa(U32 value, char *result) {
         if (count >= MAX_TRIE_SIZE)                     \
             croak("too many unique tokens in a single data chunk"); \
     }
+
+MODULE = Text::SpeedyFx::Result PACKAGE = Text::SpeedyFx::Result
+
+PROTOTYPES: ENABLE
+
+Text::SpeedyFx::Result
+TIEHASH (package, ...)
+    char *package;
+INIT:
+    sfxaa_t *p;
+CODE:
+    Newx(RETVAL, 1, SpeedyFxResult);
+    NEDTRIE_INIT(&(RETVAL->root));
+    RETVAL->count = 0;
+
+    p = &(RETVAL->index[RETVAL->count++]);
+    p->key = 23456;
+    p->val = 7;
+    NEDTRIE_INSERT(sfxaa_tree_s, &(RETVAL->root), p);
+
+    p = &(RETVAL->index[RETVAL->count++]);
+    p->key = 12345;
+    p->val = 9;
+    NEDTRIE_INSERT(sfxaa_tree_s, &(RETVAL->root), p);
+
+    p = &(RETVAL->index[RETVAL->count++]);
+    p->key = 34567;
+    p->val = 11;
+    NEDTRIE_INSERT(sfxaa_tree_s, &(RETVAL->root), p);
+OUTPUT:
+    RETVAL
+
+void
+DESTROY (pSpeedyFxResult)
+    Text::SpeedyFx::Result pSpeedyFxResult
+PPCODE:
+    Safefree(pSpeedyFxResult);
+    XSRETURN(0);
+
+void
+FIRSTKEY (pSpeedyFxResult)
+    Text::SpeedyFx::Result pSpeedyFxResult
+INIT:
+    sfxaa_t *p;
+PPCODE:
+    if ((p = NEDTRIE_MIN(sfxaa_tree_s, &(pSpeedyFxResult->root))) == 0) {
+        XSRETURN_UNDEF;
+    } else {
+        pSpeedyFxResult->last = p;
+
+        ST(0) = sv_2mortal(newSVnv(p->key));
+        XSRETURN(1);
+    }
+
+void
+NEXTKEY (pSpeedyFxResult, last)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *last
+INIT:
+    sfxaa_t *p;
+PPCODE:
+    if ((p = NEDTRIE_NEXT(sfxaa_tree_s, &(pSpeedyFxResult->root), pSpeedyFxResult->last)) == 0) {
+        XSRETURN_UNDEF;
+    } else {
+        pSpeedyFxResult->last = p;
+
+        ST(0) = sv_2mortal(newSVnv(p->key));
+        XSRETURN(1);
+    }
+
+void
+FETCH (pSpeedyFxResult, key)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+INIT:
+    sfxaa_t *p, tmp;
+PPCODE:
+    tmp.key = SvNV(key);
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
+        XSRETURN_UNDEF;
+    } else {
+        ST(0) = sv_2mortal(newSVnv(p->val));
+        XSRETURN(1);
+    }
+
+void
+EXISTS (pSpeedyFxResult, key)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+INIT:
+    sfxaa_t *p, tmp;
+PPCODE:
+    tmp.key = SvNV(key);
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
+        XSRETURN_NO;
+    } else {
+        XSRETURN_YES;
+    }
+
+void
+SCALAR (pSpeedyFxResult)
+    Text::SpeedyFx::Result pSpeedyFxResult
+PPCODE:
+    ST(0) = sv_2mortal(newSVpvf("%d/%d", pSpeedyFxResult->count, MAX_TRIE_SIZE));
+    XSRETURN(1);
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 
