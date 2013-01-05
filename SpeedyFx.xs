@@ -209,39 +209,89 @@ MODULE = Text::SpeedyFx::Result PACKAGE = Text::SpeedyFx::Result
 
 PROTOTYPES: ENABLE
 
-Text::SpeedyFx::Result
-TIEHASH (package, ...)
+SV *
+new (package, ...)
     char *package;
-INIT:
+PREINIT:
+    SpeedyFxResult *pSpeedyFxResult;
+    HV *thingy;
+    HV *stash;
+    SV *tie;
     sfxaa_t *p;
 CODE:
-    Newx(RETVAL, 1, SpeedyFxResult);
-    NEDTRIE_INIT(&(RETVAL->root));
-    RETVAL->count = 0;
+    Newx(pSpeedyFxResult, 1, SpeedyFxResult);
+    NEDTRIE_INIT(&(pSpeedyFxResult->root));
+    pSpeedyFxResult->count = 0;
 
-    p = &(RETVAL->index[RETVAL->count++]);
-    p->key = 23456;
-    p->val = 7;
-    NEDTRIE_INSERT(sfxaa_tree_s, &(RETVAL->root), p);
+    thingy = newHV();
+    tie = newRV_noinc(newSViv(PTR2IV(pSpeedyFxResult)));
+    stash = gv_stashpv(package, GV_ADD);
+    sv_bless(tie, stash);
+    hv_magic(thingy, (GV *) tie, PERL_MAGIC_tied);
 
-    p = &(RETVAL->index[RETVAL->count++]);
-    p->key = 12345;
-    p->val = 9;
-    NEDTRIE_INSERT(sfxaa_tree_s, &(RETVAL->root), p);
-
-    p = &(RETVAL->index[RETVAL->count++]);
-    p->key = 34567;
-    p->val = 11;
-    NEDTRIE_INSERT(sfxaa_tree_s, &(RETVAL->root), p);
+    RETVAL = newRV_noinc((SV *) thingy);
 OUTPUT:
     RETVAL
 
 void
-DESTROY (pSpeedyFxResult)
+FETCH (pSpeedyFxResult, key)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+INIT:
+    sfxaa_t *p, tmp;
+PPCODE:
+    tmp.key = SvNV(key);
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
+        XSRETURN_UNDEF;
+    } else {
+        ST(0) = sv_2mortal(newSVnv(p->val));
+        XSRETURN(1);
+    }
+
+void
+STORE (pSpeedyFxResult, key, value)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+    SV *value
+INIT:
+    sfxaa_t *p;
+PPCODE:
+    p = &(pSpeedyFxResult->index[pSpeedyFxResult->count++]);
+    p->key = SvNV(key);
+    p->val = SvNV(value);
+    NEDTRIE_INSERT(sfxaa_tree_s, &(pSpeedyFxResult->root), p);
+    if (pSpeedyFxResult->count >= MAX_TRIE_SIZE)
+        croak("too many unique tokens in a single data chunk");
+
+void
+DELETE (pSpeedyFxResult, key)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+PPCODE:
+    croak("DELETE not implemented");
+    XSRETURN(0);
+
+void
+CLEAR (pSpeedyFxResult)
     Text::SpeedyFx::Result pSpeedyFxResult
 PPCODE:
-    Safefree(pSpeedyFxResult);
+    NEDTRIE_INIT(&(pSpeedyFxResult->root));
+    pSpeedyFxResult->count = 0;
     XSRETURN(0);
+
+void
+EXISTS (pSpeedyFxResult, key)
+    Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+INIT:
+    sfxaa_t *p, tmp;
+PPCODE:
+    tmp.key = SvNV(key);
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
+        XSRETURN_NO;
+    } else {
+        XSRETURN_YES;
+    }
 
 void
 FIRSTKEY (pSpeedyFxResult)
@@ -275,40 +325,25 @@ PPCODE:
     }
 
 void
-FETCH (pSpeedyFxResult, key)
-    Text::SpeedyFx::Result pSpeedyFxResult
-    SV *key
-INIT:
-    sfxaa_t *p, tmp;
-PPCODE:
-    tmp.key = SvNV(key);
-    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
-        XSRETURN_UNDEF;
-    } else {
-        ST(0) = sv_2mortal(newSVnv(p->val));
-        XSRETURN(1);
-    }
-
-void
-EXISTS (pSpeedyFxResult, key)
-    Text::SpeedyFx::Result pSpeedyFxResult
-    SV *key
-INIT:
-    sfxaa_t *p, tmp;
-PPCODE:
-    tmp.key = SvNV(key);
-    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
-        XSRETURN_NO;
-    } else {
-        XSRETURN_YES;
-    }
-
-void
 SCALAR (pSpeedyFxResult)
     Text::SpeedyFx::Result pSpeedyFxResult
 PPCODE:
     ST(0) = sv_2mortal(newSVpvf("%d/%d", pSpeedyFxResult->count, MAX_TRIE_SIZE));
     XSRETURN(1);
+
+void
+UNTIE (pSpeedyFxResult)
+    Text::SpeedyFx::Result pSpeedyFxResult
+PPCODE:
+    croak("UNTIE not implemented");
+    XSRETURN(0);
+
+void
+DESTROY (pSpeedyFxResult)
+    Text::SpeedyFx::Result pSpeedyFxResult
+PPCODE:
+    Safefree(pSpeedyFxResult);
+    XSRETURN(0);
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 
