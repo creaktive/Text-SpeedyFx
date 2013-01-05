@@ -207,11 +207,20 @@ PPCODE:
     }
 
 void
-DELETE (pSpeedyFxResult, ...)
+DELETE (pSpeedyFxResult, key)
     Text::SpeedyFx::Result pSpeedyFxResult
+    SV *key
+INIT:
+    sfxaa_t *p, tmp;
 PPCODE:
-    croak("DELETE not implemented");
-    XSRETURN(0);
+    tmp.key = SvNV(key);
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) == 0) {
+        XSRETURN_UNDEF;
+    } else {
+        ST(0) = sv_2mortal(newSVnv(p->val));
+        NEDTRIE_REMOVE(sfxaa_tree_s, &(pSpeedyFxResult->root), p);
+        XSRETURN(1);
+    }
 
 void
 CLEAR (pSpeedyFxResult)
@@ -219,7 +228,6 @@ CLEAR (pSpeedyFxResult)
 PPCODE:
     NEDTRIE_INIT(&(pSpeedyFxResult->root));
     pSpeedyFxResult->count = 0;
-    XSRETURN(0);
 
 void
 EXISTS (pSpeedyFxResult, key)
@@ -273,18 +281,15 @@ PPCODE:
     XSRETURN(1);
 
 void
-UNTIE (pSpeedyFxResult)
-    Text::SpeedyFx::Result pSpeedyFxResult
+UNTIE (...)
 PPCODE:
-    croak("UNTIE not implemented");
-    XSRETURN(0);
+    croak("not implemented");
 
 void
 DESTROY (pSpeedyFxResult)
     Text::SpeedyFx::Result pSpeedyFxResult
 PPCODE:
     Safefree(pSpeedyFxResult);
-    XSRETURN(0);
 
 MODULE = Text::SpeedyFx PACKAGE = Text::SpeedyFx
 
