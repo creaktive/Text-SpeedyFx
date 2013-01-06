@@ -7,8 +7,11 @@
 #include "nedtrie.h"
 
 #define MAX_MAP_SIZE    0x2ffff
-#define MAX_TRIE_SIZE   (1 << 21)
 #define SFX_SIGNATURE   0x4c9da21d
+
+#ifndef MAX_TRIE_SIZE
+#define MAX_TRIE_SIZE   (1 << 19)
+#endif
 
 typedef struct {
     U32 length;
