@@ -129,15 +129,14 @@ SpeedyFxResult *result_addr (SV *self) {
 
 #define _NEDTRIE_STORE                                                          \
     tmp.key = wordhash;                                                         \
-    if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) != 0)  \
+    if ((p = NEDTRIE_FIND(sfxaa_tree_s, root, &tmp)) != 0)                      \
         p->val++;                                                               \
     else {                                                                      \
-        p = &(pSpeedyFxResult->index[pSpeedyFxResult->count++]);                \
+        if ((p = slot++) == end)                                                \
+            croak("too many unique tokens in a single data chunk");             \
         p->key = wordhash;                                                      \
         p->val = 1;                                                             \
-        NEDTRIE_INSERT(sfxaa_tree_s, &(pSpeedyFxResult->root), p);              \
-        if (pSpeedyFxResult->count >= MAX_TRIE_SIZE)                            \
-            croak("too many unique tokens in a single data chunk");             \
+        NEDTRIE_INSERT(sfxaa_tree_s, root, p);                                  \
     }
 
 MODULE = Text::SpeedyFx::Result PACKAGE = Text::SpeedyFx::Result
@@ -198,12 +197,12 @@ PPCODE:
     if ((p = NEDTRIE_FIND(sfxaa_tree_s, &(pSpeedyFxResult->root), &tmp)) != 0)
         p->val = tmp.val;
     else {
-        p = &(pSpeedyFxResult->index[pSpeedyFxResult->count++]);
+        if (pSpeedyFxResult->count++ >= MAX_TRIE_SIZE)
+            croak("too many unique tokens in a single data chunk");
+        p = &(pSpeedyFxResult->index[pSpeedyFxResult->count]);
         p->key = tmp.key;
         p->val = tmp.val;
         NEDTRIE_INSERT(sfxaa_tree_s, &(pSpeedyFxResult->root), p);
-        if (pSpeedyFxResult->count >= MAX_TRIE_SIZE)
-            croak("too many unique tokens in a single data chunk");
     }
 
 void
@@ -398,17 +397,24 @@ INIT:
     _SPEEDYFX_INIT;
     SV *res;
     SpeedyFxResult *pSpeedyFxResult;
-    sfxaa_t *p, tmp;
+    sfxaa_tree_t *root;
+    sfxaa_t *p, *slot, *end, tmp;
 PPCODE:
     res = result_init();
     if ((pSpeedyFxResult = result_addr(res)) == NULL)
         croak("TARFU");
+
+    root    = &(pSpeedyFxResult->root);
+    slot    = &(pSpeedyFxResult->index[0]);
+    end     = &(pSpeedyFxResult->index[MAX_TRIE_SIZE]);
 
     if (length > 256) {
         _SPEEDYFX(_NEDTRIE_STORE, _WALK_UTF8, length);
     } else {
         _SPEEDYFX(_NEDTRIE_STORE, _WALK_LATIN1, 256);
     }
+
+    pSpeedyFxResult->count = (slot - pSpeedyFxResult->index) / sizeof(sfxaa_t);
 
     ST(0) = sv_2mortal(res);
     XSRETURN(1);
