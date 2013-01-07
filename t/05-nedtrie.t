@@ -37,13 +37,16 @@ is((each %$fv)[0], 89612897, q(lowest key is the first));
 #is(delete $fv->{89612897}, 61333046, q(DELETE lowest key));
 #is((each %$fv)[0], 391754347, q(now, second lowest key is the first));
 
-$fv->{1198795427} = 1321107448;
+%$fv = ();
+is(scalar keys %$fv, 0, q(CLEAR));
+
+@{$fv}{keys %hash} = values %hash;
 is_deeply(\%hash, $fv, q(trie match hash, again));
 
 undef $fv;
 is($fv, undef, q(DESTROY));
 
-done_testing(13);
+done_testing(14);
 
 __DATA__
 546742292	2255718447
