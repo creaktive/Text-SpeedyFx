@@ -52,7 +52,7 @@ SV *result_init () {
     SAVETMPS;
 
     PUSHMARK(SP);
-    XPUSHs(newSVpvs_flags("Text::SpeedyFx::Result", SVs_TEMP));
+    XPUSHs(sv_2mortal(newSVpv("Text::SpeedyFx::Result", 0)));
     PUTBACK;
 
     count = call_method("new", G_SCALAR);
