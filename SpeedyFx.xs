@@ -448,6 +448,7 @@ PPCODE:
     }
 
     ST(0) = sv_2mortal(newSVpv(fv, size));
+    Safefree(fv);
     XSRETURN(1);
 
 void
