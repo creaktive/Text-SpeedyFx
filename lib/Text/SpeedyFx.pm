@@ -95,13 +95,13 @@ C<hash_fv()>/C<hash_min()> variants are up to 260% faster!
 
 Parses C<$octets> and returns a feature vector (string of bits) with length C<$n>.
 C<$n> is supposed to be a multiplier of 8, as the length of the resulting feature vector is C<ceil($n / 8)>.
-See the included utilities L<cosine_cmp> and L<uniq_wc>.
+See the included utilities C<cosine_cmp> and C<uniq_wc>.
 
 =method hash_min($octets)
 
 Parses C<$octets> and returns the hash with the lowest value.
 Useful in L<MinHash|http://en.wikipedia.org/wiki/MinHash> implementation.
-See also the included L<minhash_cmp> utility.
+See also the included C<minhash_cmp> utility.
 
 =head1 BENCHMARK
 
@@ -159,6 +159,6 @@ The only way to raise this limit is by recompilation of the XS module:
 * L<Extremely Fast Text Feature Extraction for Classification and Indexing|http://www.hpl.hp.com/techreports/2008/HPL-2008-91R1.pdf> by L<George Forman|http://www.hpl.hp.com/personal/George_Forman/> and L<Evan Kirshenbaum|http://www.kirshenbaum.net/evan/index.htm>
 * L<MinHash — выявляем похожие множества|http://habrahabr.ru/post/115147/>
 * L<Фильтр Блума|http://habrahabr.ru/post/112069/>
-* L<cosine_cmp>, L<minhash_cmp> and L<uniq_wc> utilities from this distribution
+* C<cosine_cmp>, C<minhash_cmp> and C<uniq_wc> utilities from this distribution
 
 =cut
